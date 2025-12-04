@@ -1,0 +1,25 @@
+/* Tailwind CSS - import without preflight to avoid resetting Bootstrap styles */
+@import "tailwindcss" layer(utilities);
+
+/* Custom theme variables for Tailwind */
+@theme {
+  --color-primary: #eb6753;
+  --color-secondary: #222222;
+  --color-dark: #0d1216;
+  --color-light: #f7f7f7;
+  --color-headings: #181a20;
+  --font-family-body: var(--body-font-family), sans-serif;
+  --font-family-title: var(--title-font-family), sans-serif;
+  --animate-spin-slow: spin 10s linear infinite;
+  --animate-spin-slow-reverse: spin 10s linear infinite reverse;
+}
+
+/* CSS Variables matching original theme */
+:root {
+  --icon-font-family: "Font Awesome 6 Pro";
+  --icon-font-family2: "Flaticon";
+  --container-width: 1290px;
+  --divder-space: 200px;
+  --headings-color: #181a20;
+  --primary-color: #eb6753;
+}
