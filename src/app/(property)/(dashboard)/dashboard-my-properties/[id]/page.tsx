@@ -1,32 +1,70 @@
-"use client";
-
 import DashboardHeader from "@/components/common/DashboardHeader";
 import MobileMenu from "@/components/common/mobile-menu";
 import Footer from "@/components/property/dashboard/Footer";
 import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
 import DboardMobileNavigation from "@/components/property/dashboard/DboardMobileNavigation";
 import Link from "next/link";
-import { use } from "react";
+import Image from "next/image";
+import { getPropertyById } from "@/actions/properties";
+import { notFound } from "next/navigation";
 
-// Property detail components from single-v1
-import EnergyClass from "@/components/property/property-single-style/common/EnergyClass";
-import FloorPlans from "@/components/property/property-single-style/common/FloorPlans";
-import HomeValueChart from "@/components/property/property-single-style/common/HomeValueChart";
-import OverView from "@/components/property/property-single-style/common/OverView";
-import PropertyAddress from "@/components/property/property-single-style/common/PropertyAddress";
-import PropertyDetails from "@/components/property/property-single-style/common/PropertyDetails";
-import PropertyFeaturesAminites from "@/components/property/property-single-style/common/PropertyFeaturesAminites";
-import PropertyHeader from "@/components/property/property-single-style/common/PropertyHeader";
-import PropertyVideo from "@/components/property/property-single-style/common/PropertyVideo";
-import ProperytyDescriptions from "@/components/property/property-single-style/common/ProperytyDescriptions";
-import VirtualTour360 from "@/components/property/property-single-style/common/VirtualTour360";
-import PropertyGallery from "@/components/property/property-single-style/single-v1/PropertyGallery";
-import MortgageCalculator from "@/components/property/property-single-style/common/MortgageCalculator";
-import WalkScore from "@/components/property/property-single-style/common/WalkScore";
+const formatDate = (date: Date | string) => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
 
-const DashboardPropertyDetail = ({ params }: { params: Promise<{ id: string }> }) => {
-  const resolvedParams = use(params);
-  const id = resolvedParams.id;
+const PlaceholderImage = ({ size = "large" }: { size?: "small" | "large" }) => {
+  const dimensions = size === "large" ? { w: 400, h: 300 } : { w: 110, h: 94 };
+  return (
+    <div
+      style={{
+        width: dimensions.w,
+        height: dimensions.h,
+        backgroundColor: "#f0f0f0",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 8,
+      }}
+    >
+      <svg
+        width={size === "large" ? 80 : 48}
+        height={size === "large" ? 80 : 48}
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M3 21H21M5 21V7L12 3L19 7V21M9 21V13H15V21"
+          stroke="#999"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+};
+
+const DashboardPropertyDetail = async ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = await params;
+
+  const data = await getPropertyById(id);
+
+  if (!data) {
+    notFound();
+  }
+
+  const { appraisals, ...property } = data;
+  const latestAppraisal = appraisals[0];
+  const reportData = latestAppraisal?.data as {
+    coverPageData?: { reportDate?: string };
+    propertyInfo?: { estimatedValue?: { low?: number; high?: number } };
+  } | null;
 
   return (
     <>
@@ -74,133 +112,244 @@ const DashboardPropertyDetail = ({ params }: { params: Promise<{ id: string }> }
               </div>
               {/* End .row */}
 
-              {/* Property Header */}
-              <div className="row mb30">
-                <PropertyHeader id={id} />
-              </div>
-              {/* End .row */}
-
-              {/* Property Gallery */}
-              <div className="row mb30">
-                <PropertyGallery id={id} />
-              </div>
-              {/* End .row */}
-
-              <div className="row">
-                <div className="col-xl-12">
-                  {/* Overview */}
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <h4 className="title fz17 mb30">Overview</h4>
-                    <div className="row">
-                      <OverView />
+              <>
+                  {/* Property Header */}
+                  <div className="row mb30">
+                    <div className="col-lg-8">
+                      <div className="single-property-content mb30-md">
+                        <h2 className="sp-lg-title">{property.addressCommonName}</h2>
+                        <div className="pd-meta mb15 d-md-flex align-items-center">
+                          {property.propertyType && (
+                            <p className="text fz15 mb-0 bdrr1 pr10 bdrrn-sm">
+                              {property.propertyType}
+                            </p>
+                          )}
+                          <span className="ff-heading text-thm fz15 bdrr1 pr10 ml0-sm ml10 bdrrn-sm">
+                            <i className="fas fa-circle fz10 pe-2" />
+                            {latestAppraisal?.status === "completed" ? "Report Ready" : "Pending Report"}
+                          </span>
+                          <span className="ff-heading fz15 ml10 ml0-sm">
+                            <i className="far fa-clock pe-2" />
+                            Added {formatDate(property.createdAt)}
+                          </span>
+                        </div>
+                        <div className="property-meta d-flex align-items-center">
+                          {property.bedroomCount && (
+                            <span className="text fz15">
+                              <i className="flaticon-bed pe-2 align-text-top" />
+                              {property.bedroomCount} bed
+                            </span>
+                          )}
+                          {property.bathroomCount && (
+                            <span className="text ml20 fz15">
+                              <i className="flaticon-shower pe-2 align-text-top" />
+                              {property.bathroomCount} bath
+                            </span>
+                          )}
+                          {property.landAreaSqm && (
+                            <span className="text ml20 fz15">
+                              <i className="flaticon-expand pe-2 align-text-top" />
+                              {property.landAreaSqm} sqm
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  {/* End .ps-widget */}
-
-                  {/* Property Description */}
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <h4 className="title fz17 mb30">Property Description</h4>
-                    <ProperytyDescriptions />
-
-                    <h4 className="title fz17 mb30 mt50">Property Details</h4>
-                    <div className="row">
-                      <PropertyDetails />
-                    </div>
-                  </div>
-                  {/* End .ps-widget */}
-
-                  {/* Address */}
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <h4 className="title fz17 mb30 mt30">Address</h4>
-                    <div className="row">
-                      <PropertyAddress />
-                    </div>
-                  </div>
-                  {/* End .ps-widget */}
-
-                  {/* Features & Amenities */}
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <h4 className="title fz17 mb30">Features &amp; Amenities</h4>
-                    <div className="row">
-                      <PropertyFeaturesAminites />
-                    </div>
-                  </div>
-                  {/* End .ps-widget */}
-
-                  {/* Energy Class */}
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <h4 className="title fz17 mb30">Energy Class</h4>
-                    <div className="row">
-                      <EnergyClass />
-                    </div>
-                  </div>
-                  {/* End .ps-widget */}
-
-                  {/* Floor Plans */}
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <h4 className="title fz17 mb30">Floor Plans</h4>
-                    <div className="row">
-                      <div className="col-md-12">
-                        <div className="accordion-style1 style2">
-                          <FloorPlans />
+                    <div className="col-lg-4">
+                      <div className="single-property-content">
+                        <div className="property-action text-lg-end">
+                          <div className="d-flex mb20 mb10-md align-items-center justify-content-lg-end">
+                            <span className="icon mr10">
+                              <span className="flaticon-share-1" />
+                            </span>
+                            <span className="icon">
+                              <span className="flaticon-printer" />
+                            </span>
+                          </div>
+                          <div className="d-flex gap-2 justify-content-lg-end">
+                            {latestAppraisal?.pdfUrl && (
+                              <a
+                                href={latestAppraisal.pdfUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ud-btn btn-thm"
+                              >
+                                <i className="fas fa-file-pdf me-2"></i>View Report
+                              </a>
+                            )}
+                            <Link
+                              href={`/dashboard-my-properties/${id}/generate-report`}
+                              className="ud-btn btn-dark"
+                            >
+                              <i className="fas fa-plus me-2"></i>New Report
+                            </Link>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  {/* End .ps-widget */}
+                  {/* End Property Header */}
 
-                  {/* Video */}
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30">
-                    <h4 className="title fz17 mb30">Video</h4>
-                    <div className="row">
-                      <PropertyVideo />
-                    </div>
-                  </div>
-                  {/* End .ps-widget */}
-
-                  {/* Virtual Tour */}
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <h4 className="title fz17 mb30">360° Virtual Tour</h4>
-                    <div className="row">
-                      <VirtualTour360 />
-                    </div>
-                  </div>
-                  {/* End .ps-widget */}
-
-                  {/* Walkscore */}
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <h4 className="title fz17 mb30">Walkscore</h4>
-                    <div className="row">
-                      <div className="col-md-12">
-                        <h4 className="fw400 mb20">
-                          10425 Tabor St Los Angeles CA 90034 USA
-                        </h4>
-                        <WalkScore />
+                  {/* Property Image */}
+                  <div className="row mb30">
+                    <div className="col-12">
+                      <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 overflow-hidden position-relative">
+                        <div className="row">
+                          <div className="col-md-8">
+                            {property.propertyImageUrl ? (
+                              <Image
+                                src={property.propertyImageUrl}
+                                alt={property.addressCommonName}
+                                width={800}
+                                height={500}
+                                className="w-100 bdrs12"
+                                style={{ objectFit: "cover" }}
+                              />
+                            ) : (
+                              <div className="d-flex justify-content-center align-items-center" style={{ height: 300 }}>
+                                <PlaceholderImage size="large" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="col-md-4">
+                            <div className="row g-2">
+                              {[1, 2, 3, 4].map((i) => (
+                                <div key={i} className="col-6">
+                                  <PlaceholderImage size="small" />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  {/* End .ps-widget */}
+                  {/* End Property Image */}
 
-                  {/* Mortgage Calculator */}
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <h4 className="title fz17 mb30">Mortgage Calculator</h4>
-                    <div className="row">
-                      <MortgageCalculator />
+                  <div className="row">
+                    <div className="col-xl-12">
+                      {/* Overview */}
+                      <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
+                        <h4 className="title fz17 mb30">Overview</h4>
+                        <div className="row">
+                          <div className="col-sm-6 col-lg-3">
+                            <div className="overview-element mb25 d-flex align-items-center">
+                              <span className="icon mr15 flaticon-bed" />
+                              <div className="details">
+                                <p className="text mb-0">Bedrooms</p>
+                                <h6 className="mb-0">{property.bedroomCount || "—"}</h6>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-sm-6 col-lg-3">
+                            <div className="overview-element mb25 d-flex align-items-center">
+                              <span className="icon mr15 flaticon-shower" />
+                              <div className="details">
+                                <p className="text mb-0">Bathrooms</p>
+                                <h6 className="mb-0">{property.bathroomCount || "—"}</h6>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-sm-6 col-lg-3">
+                            <div className="overview-element mb25 d-flex align-items-center">
+                              <span className="icon mr15 flaticon-home-1" />
+                              <div className="details">
+                                <p className="text mb-0">Property Type</p>
+                                <h6 className="mb-0">{property.propertyType || "—"}</h6>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-sm-6 col-lg-3">
+                            <div className="overview-element mb25 d-flex align-items-center">
+                              <span className="icon mr15 flaticon-expand" />
+                              <div className="details">
+                                <p className="text mb-0">Land Area</p>
+                                <h6 className="mb-0">{property.landAreaSqm ? `${property.landAreaSqm} sqm` : "—"}</h6>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {/* End Overview */}
+
+                      {/* Appraisal Reports */}
+                      <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
+                        <h4 className="title fz17 mb30">Appraisal Reports</h4>
+                        {appraisals.length === 0 ? (
+                          <p className="text-muted">No appraisal reports generated yet.</p>
+                        ) : (
+                          <div className="table-responsive">
+                            <table className="table">
+                              <thead>
+                                <tr>
+                                  <th>Date Generated</th>
+                                  <th>Status</th>
+                                  <th>Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {appraisals.map((appraisal) => (
+                                  <tr key={appraisal.id}>
+                                    <td>{formatDate(appraisal.createdAt)}</td>
+                                    <td>
+                                      <span className={`badge ${
+                                        appraisal.status === "completed" ? "bg-success" :
+                                        appraisal.status === "pending" ? "bg-warning" :
+                                        appraisal.status === "processing" ? "bg-info" : "bg-danger"
+                                      }`}>
+                                        {appraisal.status}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      {appraisal.pdfUrl && (
+                                        <a
+                                          href={appraisal.pdfUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="btn btn-sm btn-outline-primary"
+                                        >
+                                          <i className="fas fa-file-pdf me-1"></i> View PDF
+                                        </a>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                      {/* End Appraisal Reports */}
+
+                      {/* Report Data Preview (if available) */}
+                      {reportData && (
+                        <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
+                          <h4 className="title fz17 mb30">Latest Report Data</h4>
+                          <div className="row">
+                            {reportData.coverPageData && (
+                              <div className="col-md-6 mb20">
+                                <h6>Report Date</h6>
+                                <p>{reportData.coverPageData.reportDate}</p>
+                              </div>
+                            )}
+                            {reportData.propertyInfo?.estimatedValue && (
+                              <div className="col-md-6 mb20">
+                                <h6>Estimated Value</h6>
+                                <p>
+                                  {reportData.propertyInfo.estimatedValue.low && reportData.propertyInfo.estimatedValue.high
+                                    ? `$${reportData.propertyInfo.estimatedValue.low.toLocaleString()} - $${reportData.propertyInfo.estimatedValue.high.toLocaleString()}`
+                                    : "—"}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {/* End Report Data Preview */}
                     </div>
                   </div>
-                  {/* End .ps-widget */}
-
-                  {/* Home Value */}
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <h4 className="title fz17 mb30">Home Value</h4>
-                    <div className="row">
-                      <HomeValueChart />
-                    </div>
-                  </div>
-                  {/* End .ps-widget */}
-                </div>
-              </div>
-              {/* End .row */}
+                  {/* End .row */}
+                </>
             </div>
             {/* End .dashboard__content */}
 

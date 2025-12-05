@@ -11,14 +11,9 @@ const SidebarDashboard = () => {
       title: "MAIN",
       items: [
         {
-          href: "/dashboard-home",
+          href: "/dashboard",
           icon: "flaticon-discovery",
           text: "Dashboard",
-        },
-        {
-          href: "/dashboard-message",
-          icon: "flaticon-chat-1",
-          text: "Message",
         },
       ],
     },
@@ -26,24 +21,14 @@ const SidebarDashboard = () => {
       title: "MANAGE LISTINGS",
       items: [
         {
-          href: "/dashboard-my-properties",
+          href: "/dashboard/my-properties",
           icon: "flaticon-home",
           text: "My Properties",
         },
         {
-          href: "/dashboard-my-favourites",
-          icon: "flaticon-like",
-          text: "My Favorites",
-        },
-        {
-          href: "/dashboard-saved-search",
-          icon: "flaticon-search-2",
-          text: "Saved Search",
-        },
-        {
-          href: "/dashboard-reviews",
-          icon: "flaticon-review",
-          text: "Reviews",
+          href: "/dashboard/add-property",
+          icon: "flaticon-add-new",
+          text: "Add Property",
         },
       ],
     },
@@ -51,12 +36,7 @@ const SidebarDashboard = () => {
       title: "MANAGE ACCOUNT",
       items: [
         {
-          href: "/dashboard-my-package",
-          icon: "flaticon-protection",
-          text: "My Package",
-        },
-        {
-          href: "/dashboard-my-profile",
+          href: "/dashboard/profile",
           icon: "flaticon-user",
           text: "My Profile",
         },
@@ -68,6 +48,14 @@ const SidebarDashboard = () => {
       ],
     },
   ];
+
+  // Check if a route is active (exact match or starts with for nested routes)
+  const isActive = (href: string) => {
+    if (href === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+    return pathname === href || pathname.startsWith(href + "/");
+  };
 
   return (
     <div className="dashboard__sidebar d-none d-lg-block">
@@ -85,9 +73,8 @@ const SidebarDashboard = () => {
               <div key={itemIndex} className="sidebar_list_item">
                 <Link
                   href={item.href}
-                  className={`items-center   ${
-                    pathname == item.href ? "-is-active" : ""
-                  } `}
+                  className={`items-center ${isActive(item.href) ? "-is-active" : ""}`}
+                  prefetch={true}
                 >
                   <i className={`${item.icon} mr15`} />
                   {item.text}

@@ -3,7 +3,7 @@ import MobileMenu from "@/components/common/mobile-menu";
 import DboardMobileNavigation from "@/components/property/dashboard/DboardMobileNavigation";
 import Footer from "@/components/property/dashboard/Footer";
 import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
-import RecentActivities from "@/components/property/dashboard/dashboard-home/RecentActivities";
+import MyFavourites from "@/components/property/dashboard/dashboard-home/MyFavourites";
 import TopStateBlock from "@/components/property/dashboard/dashboard-home/TopStateBlock";
 import PropertyViews from "@/components/property/dashboard/dashboard-home/property-view";
 
@@ -63,8 +63,8 @@ const DashboardHome = () => {
 
                 <div className="col-xl-4">
                   <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <h4 className="title fz17 mb25">Recent Activities</h4>
-                    <RecentActivities />
+                    <h4 className="title fz17 mb25">My Favourites</h4>
+                    <MyFavourites />
                   </div>
                 </div>
                 {/* End .col-xl-4 */}
