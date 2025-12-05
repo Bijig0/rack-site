@@ -26,11 +26,6 @@ const SidebarDashboard = () => {
       title: "MANAGE LISTINGS",
       items: [
         {
-          href: "/dashboard-add-property",
-          icon: "flaticon-new-tab",
-          text: "Add New Property",
-        },
-        {
           href: "/dashboard-my-properties",
           icon: "flaticon-home",
           text: "My Properties",

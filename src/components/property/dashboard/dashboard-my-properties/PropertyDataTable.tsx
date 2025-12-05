@@ -93,7 +93,7 @@ const PropertyDataTable = () => {
                 </div>
                 <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4">
                   <div className="h6 list-title">
-                    <Link href={`/single-v1/${property.id}`}>{property.title}</Link>
+                    <Link href={`/dashboard-my-properties/${property.id}`}>{property.title}</Link>
                   </div>
                   <p className="list-text mb-0">{property.location}</p>
                   <div className="list-price">
@@ -111,13 +111,14 @@ const PropertyDataTable = () => {
             <td className="vam">{property.datePublished}</td>
             <td className="vam">
               <div className="d-flex">
-                <button
+                <Link
+                  href={`/dashboard-my-properties/${property.id}`}
                   className="icon"
                   style={{ border: "none" }}
                   data-tooltip-id={`edit-${property.id}`}
                 >
                   <span className="fas fa-pen fa" />
-                </button>
+                </Link>
                 <button
                   className="icon"
                   style={{ border: "none" }}
@@ -129,7 +130,7 @@ const PropertyDataTable = () => {
                 <ReactTooltip
                   id={`edit-${property.id}`}
                   place="top"
-                  content="Edi"
+                  content="Edit"
                 />
                 <ReactTooltip
                   id={`delete-${property.id}`}

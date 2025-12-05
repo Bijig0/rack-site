@@ -1,3 +1,5 @@
+"use client";
+
 import DashboardHeader from "@/components/common/DashboardHeader";
 import MobileMenu from "@/components/common/mobile-menu";
 import Pagination from "@/components/property/Pagination";
@@ -6,12 +8,17 @@ import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
 import FilterHeader from "../../../../components/property/dashboard/dashboard-my-properties/FilterHeader";
 import PropertyDataTable from "@/components/property/dashboard/dashboard-my-properties/PropertyDataTable";
 import DboardMobileNavigation from "@/components/property/dashboard/DboardMobileNavigation";
-
-export const metadata = {
-  title: "Dashboard Properties || Homez - Real Estate NextJS Template",
-};
+import AddPropertyModal from "@/components/property/dashboard/AddPropertyModal";
+import { useState } from "react";
 
 const DashboardMyProperties = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleAddPropertySuccess = () => {
+    // Refresh the properties list
+    // The modal will handle queryClient.invalidateQueries
+  };
+
   return (
     <>
       {/* Main Header Nav */}
@@ -39,14 +46,22 @@ const DashboardMyProperties = () => {
               {/* End .row */}
 
               <div className="row align-items-center pb40">
-                <div className="col-xxl-3">
+                <div className="col-xxl-3 col-xl-4 col-lg-5">
                   <div className="dashboard_title_area">
                     <h2>My Properties</h2>
                     <p className="text">We are glad to see you again!</p>
                   </div>
                 </div>
-                <div className="col-xxl-9">
-                  <FilterHeader />
+                <div className="col-xxl-9 col-xl-8 col-lg-7">
+                  <div className="d-flex flex-wrap gap-2 justify-content-lg-end align-items-center">
+                    <button
+                      className="ud-btn btn-dark"
+                      onClick={() => setIsModalOpen(true)}
+                    >
+                      <i className="fas fa-plus me-2"></i>Add New Property
+                    </button>
+                    <FilterHeader />
+                  </div>
                 </div>
               </div>
               {/* End .row */}
@@ -74,6 +89,13 @@ const DashboardMyProperties = () => {
         </div>
       </div>
       {/* dashboard_content_wrapper */}
+
+      {/* Add Property Modal */}
+      <AddPropertyModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleAddPropertySuccess}
+      />
     </>
   );
 };

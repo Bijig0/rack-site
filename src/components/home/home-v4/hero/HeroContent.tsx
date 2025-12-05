@@ -4,81 +4,128 @@ import { useRouter } from "next/navigation";
 
 const HeroContent = () => {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("buy");
+  const [address, setAddress] = useState("");
 
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
+  const handleGenerateReport = () => {
+    if (address.trim()) {
+      // Navigate to report generation with address
+      router.push(`/dashboard-home?address=${encodeURIComponent(address)}`);
+    }
   };
 
-  const tabs = [
-    { id: "buy", label: "Buy" },
-    { id: "rent", label: "Rent" },
-    { id: "sold", label: "Sold" },
-  ];
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleGenerateReport();
+    }
+  };
 
   return (
-    <div className="advance-search-tab mt60 mt30-lg mx-auto animate-up-3">
-      <ul className="nav nav-tabs p-0 m-0">
-        {tabs.map((tab) => (
-          <li className="nav-item" key={tab.id}>
-            <button
-              className={`nav-link ${activeTab === tab.id ? "active" : ""}`}
-              onClick={() => handleTabClick(tab.id)}
-            >
-              {tab.label}
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      <div className="tab-content">
-        {tabs.map((tab) => (
-          <div
-            className={`${activeTab === tab.id ? "active" : ""} tab-pane`}
-            key={tab.id}
-          >
-            <div className="advance-content-style1">
-              <div className="row">
-                <div className="col-md-8 col-lg-9">
-                  <div className="advance-search-field position-relative text-start">
-                    <form className="form-search position-relative">
-                      <div className="box-search">
-                        <span className="icon flaticon-home-1" />
-                        <input
-                          className="form-control bgc-f7 bdrs12"
-                          type="text"
-                          name="search"
-                          placeholder={`Search Products for ${tab.label}`}
-                        />
-                      </div>
-                    </form>
-                  </div>
+    <div className="advance-search-tab mt60 mt30-lg mx-auto animate-up-3" style={{ maxWidth: '700px' }}>
+      <div
+        className="advance-content-style1"
+        style={{
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          borderRadius: '16px',
+          padding: '8px',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+        }}
+      >
+        <div className="row align-items-center">
+          <div className="col-md-9">
+            <div className="advance-search-field position-relative text-start">
+              <form className="form-search position-relative" onSubmit={(e) => e.preventDefault()}>
+                <div className="box-search" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span
+                    className="flaticon-location"
+                    style={{
+                      fontSize: '20px',
+                      color: '#eb6753',
+                      marginLeft: '16px',
+                    }}
+                  />
+                  <input
+                    className="form-control border-0"
+                    type="text"
+                    name="address"
+                    placeholder="Enter property address..."
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    style={{
+                      fontSize: '16px',
+                      padding: '16px 0',
+                      backgroundColor: 'transparent',
+                    }}
+                  />
                 </div>
-                {/* End .col-md-8 */}
-
-                <div className="col-md-4 col-lg-3">
-                  <div className="d-flex align-items-center justify-content-start justify-content-md-center mt-3 mt-md-0">
-                    <button
-                      className="advance-search-btn"
-                      type="button"
-                      data-bs-toggle="modal"
-                      data-bs-target="#advanceSeachModal"
-                    >
-                      <span className="flaticon-settings" /> Advanced
-                    </button>
-                    <button
-                      className="advance-search-icon ud-btn btn-dark ms-4"
-                      type="button"
-                      onClick={() => router.push("/grid-full-3-col")}
-                    >
-                      <span className="flaticon-search" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              </form>
             </div>
           </div>
-        ))}
+          {/* End .col-md-9 */}
+
+          <div className="col-md-3">
+            <button
+              className="ud-btn btn-dark w-100"
+              type="button"
+              onClick={handleGenerateReport}
+              style={{
+                borderRadius: '12px',
+                padding: '16px 24px',
+                fontSize: '15px',
+                fontWeight: '600',
+              }}
+            >
+              Generate
+              <i className="fas fa-file-pdf ms-2" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Feature badges */}
+      <div
+        className="mt-4 d-flex flex-wrap justify-content-center gap-3 animate-up-4"
+        style={{ opacity: 0.9 }}
+      >
+        <div
+          className="d-flex align-items-center gap-2"
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            borderRadius: '20px',
+            padding: '8px 16px',
+            color: '#fff',
+            fontSize: '13px',
+          }}
+        >
+          <i className="fas fa-check-circle" style={{ color: '#4ade80' }} />
+          Instant Results
+        </div>
+        <div
+          className="d-flex align-items-center gap-2"
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            borderRadius: '20px',
+            padding: '8px 16px',
+            color: '#fff',
+            fontSize: '13px',
+          }}
+        >
+          <i className="fas fa-check-circle" style={{ color: '#4ade80' }} />
+          Market Comparisons
+        </div>
+        <div
+          className="d-flex align-items-center gap-2"
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            borderRadius: '20px',
+            padding: '8px 16px',
+            color: '#fff',
+            fontSize: '13px',
+          }}
+        >
+          <i className="fas fa-check-circle" style={{ color: '#4ade80' }} />
+          Professional PDF Export
+        </div>
       </div>
     </div>
   );

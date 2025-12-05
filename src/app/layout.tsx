@@ -1,5 +1,6 @@
 "use client";
 import ScrollToTop from "@/components/common/ScrollTop";
+import QueryProvider from "@/components/providers/QueryProvider";
 import Aos from "aos";
 // Original theme styles (Bootstrap + all custom CSS/SCSS)
 import "swiper/css";
@@ -46,8 +47,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`body ${poppins.variable} ${dmSans.variable}`}
         cz-shortcut-listen="false"
       >
-        <div className="wrapper ovh">{children}</div>
-        <ScrollToTop />
+        <QueryProvider>
+          <div className="wrapper ovh">{children}</div>
+          <ScrollToTop />
+        </QueryProvider>
       </body>
     </html>
   );
