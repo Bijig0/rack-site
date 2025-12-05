@@ -1,63 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
-import { eq } from 'drizzle-orm';
+import { eq, and, gt } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { users } from '@/db/schema';
+import { user, account, verification } from '@/db/schema';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, otp, newPassword } = await request.json();
+    const { email, token, newPassword } = await request.json();
 
-    if (!email || !otp || !newPassword) {
+    if (!email || !token || !newPassword) {
       return NextResponse.json(
-        { status: 'fail', message: 'Email, OTP, and new password are required' },
+        { status: 'fail', message: 'Email, token, and new password are required' },
+        { status: 400 }
+      );
+    }
+
+    if (newPassword.length < 8) {
+      return NextResponse.json(
+        { status: 'fail', message: 'Password must be at least 8 characters' },
+        { status: 400 }
+      );
+    }
+
+    // Find verification token
+    const [verificationRecord] = await db
+      .select()
+      .from(verification)
+      .where(
+        and(
+          eq(verification.identifier, email.toLowerCase()),
+          eq(verification.value, token),
+          gt(verification.expiresAt, new Date())
+        )
+      );
+
+    if (!verificationRecord) {
+      return NextResponse.json(
+        { status: 'fail', message: 'Invalid or expired token' },
         { status: 400 }
       );
     }
 
     // Find user
-    const [user] = await db
+    const [foundUser] = await db
       .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()));
+      .from(user)
+      .where(eq(user.email, email.toLowerCase()));
 
-    if (!user) {
+    if (!foundUser) {
       return NextResponse.json(
-        { status: 'fail', message: 'Invalid request' },
-        { status: 400 }
-      );
-    }
-
-    // Check reset OTP
-    if (user.resetPasswordOtp !== otp) {
-      return NextResponse.json(
-        { status: 'fail', message: 'Invalid OTP' },
-        { status: 400 }
-      );
-    }
-
-    // Check OTP expiry
-    if (!user.resetPasswordOtpExpiresAt || new Date() > user.resetPasswordOtpExpiresAt) {
-      return NextResponse.json(
-        { status: 'fail', message: 'OTP has expired' },
-        { status: 400 }
+        { status: 'fail', message: 'User not found' },
+        { status: 404 }
       );
     }
 
     // Hash new password
     const hashedPassword = await hash(newPassword, 12);
 
-    // Update password and clear reset OTP
+    // Update password in account table
     await db
-      .update(users)
+      .update(account)
       .set({
         password: hashedPassword,
-        passwordChangedAt: new Date(),
-        resetPasswordOtp: null,
-        resetPasswordOtpExpiresAt: null,
         updatedAt: new Date(),
-      })
-      .where(eq(users.id, user.id));
+      } as any)
+      .where(
+        and(
+          eq(account.userId, foundUser.id),
+          eq(account.providerId, 'credential')
+        )
+      );
+
+    // Delete used verification token
+    await db
+      .delete(verification)
+      .where(eq(verification.id, verificationRecord.id));
 
     return NextResponse.json({
       status: 'success',

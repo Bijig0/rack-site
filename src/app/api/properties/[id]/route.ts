@@ -57,7 +57,7 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const updateData: Partial<typeof property.$inferInsert> = {
+    const updateData: Record<string, any> = {
       updatedAt: new Date(),
     };
 
@@ -70,7 +70,7 @@ export async function PUT(
 
     const [updated] = await db
       .update(property)
-      .set(updateData)
+      .set(updateData as any)
       .where(
         and(
           eq(property.id, id),

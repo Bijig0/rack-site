@@ -6,13 +6,13 @@ const JWT_SECRET = new TextEncoder().encode(
 );
 
 export interface TokenPayload {
-  userId: number;
+  userId: string;
   email: string;
   iat?: number;
   exp?: number;
 }
 
-export async function signToken(payload: { userId: number; email: string }): Promise<string> {
+export async function signToken(payload: { userId: string; email: string }): Promise<string> {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

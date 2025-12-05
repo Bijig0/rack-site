@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hash, compare } from 'bcryptjs';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { users } from '@/db/schema';
+import { account } from '@/db/schema';
 import { getSession } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
@@ -24,21 +24,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user with password
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, session.userId));
-
-    if (!user) {
+    if (newPassword.length < 8) {
       return NextResponse.json(
-        { status: 'fail', message: 'User not found' },
+        { status: 'fail', message: 'New password must be at least 8 characters' },
+        { status: 400 }
+      );
+    }
+
+    // Get user's credential account
+    const [credentialAccount] = await db
+      .select()
+      .from(account)
+      .where(
+        and(
+          eq(account.userId, session.userId),
+          eq(account.providerId, 'credential')
+        )
+      );
+
+    if (!credentialAccount || !credentialAccount.password) {
+      return NextResponse.json(
+        { status: 'fail', message: 'Account not found' },
         { status: 404 }
       );
     }
 
     // Verify current password
-    const isPasswordValid = await compare(currentPassword, user.password);
+    const isPasswordValid = await compare(currentPassword, credentialAccount.password);
     if (!isPasswordValid) {
       return NextResponse.json(
         { status: 'fail', message: 'Current password is incorrect' },
@@ -51,13 +63,12 @@ export async function POST(request: NextRequest) {
 
     // Update password
     await db
-      .update(users)
+      .update(account)
       .set({
         password: hashedPassword,
-        passwordChangedAt: new Date(),
         updatedAt: new Date(),
-      })
-      .where(eq(users.id, session.userId));
+      } as any)
+      .where(eq(account.id, credentialAccount.id));
 
     return NextResponse.json({
       status: 'success',

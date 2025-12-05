@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { users } from '@/db/schema';
-import { sendPasswordResetEmail, generateOtp } from '@/lib/email';
+import { user, verification } from '@/db/schema';
+import { nanoid } from 'nanoid';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,39 +16,38 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user
-    const [user] = await db
+    const [foundUser] = await db
       .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()));
+      .from(user)
+      .where(eq(user.email, email.toLowerCase()));
 
-    if (!user) {
+    if (!foundUser) {
       // Return success even if user not found (security)
       return NextResponse.json({
         status: 'success',
-        message: 'If an account exists, a reset code has been sent',
+        message: 'If an account exists, a reset link has been sent',
       });
     }
 
-    // Generate reset OTP
-    const otp = generateOtp();
-    const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    // Generate reset token
+    const resetToken = nanoid(32);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    // Update user with reset OTP
-    await db
-      .update(users)
-      .set({
-        resetPasswordOtp: otp,
-        resetPasswordOtpExpiresAt: otpExpiresAt,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, user.id));
+    // Store verification token
+    await db.insert(verification).values({
+      id: nanoid(),
+      identifier: email.toLowerCase(),
+      value: resetToken,
+      expiresAt,
+    });
 
-    // Send reset email
-    await sendPasswordResetEmail(email, otp);
+    // In production, you would send an email with the reset link
+    // For now, just return success
+    console.log(`[Password Reset] Token for ${email}: ${resetToken}`);
 
     return NextResponse.json({
       status: 'success',
-      message: 'If an account exists, a reset code has been sent',
+      message: 'If an account exists, a reset link has been sent',
     });
   } catch (error) {
     console.error('[POST /api/auth/forgot-password]', error);

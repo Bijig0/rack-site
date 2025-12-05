@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { users } from '@/db/schema';
-import { sendOtpEmail, generateOtp } from '@/lib/email';
+import { user, account } from '@/db/schema';
+import { nanoid } from 'nanoid';
 
 export async function POST(request: NextRequest) {
   try {
-    const { fullName, email, password } = await request.json();
+    const { name, email, password } = await request.json();
 
     // Validate required fields
     if (!email || !password) {
@@ -17,11 +17,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (password.length < 8) {
+      return NextResponse.json(
+        { status: 'fail', message: 'Password must be at least 8 characters' },
+        { status: 400 }
+      );
+    }
+
     // Check if user already exists
     const [existingUser] = await db
       .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()));
+      .from(user)
+      .where(eq(user.email, email.toLowerCase()));
 
     if (existingUser) {
       return NextResponse.json(
@@ -33,32 +40,40 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await hash(password, 12);
 
-    // Generate OTP
-    const otp = generateOtp();
-    const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    // Generate IDs
+    const userId = nanoid();
+    const accountId = nanoid();
 
     // Create user
     const [newUser] = await db
-      .insert(users)
+      .insert(user)
       .values({
-        fullName: fullName || '',
+        id: userId,
+        name: name || 'User',
         email: email.toLowerCase(),
-        password: hashedPassword,
-        otp,
-        otpExpiresAt,
-        status: 'inactive',
-        isVerified: false,
-      })
-      .returning({ id: users.id, email: users.email });
+        emailVerified: false,
+        role: 'real-estate-agent',
+      } as any)
+      .returning({ id: user.id, email: user.email, name: user.name });
 
-    // Send OTP email
-    await sendOtpEmail(email, otp);
+    // Create credential account with password
+    await db.insert(account).values({
+      id: accountId,
+      accountId: email.toLowerCase(),
+      providerId: 'credential',
+      userId: userId,
+      password: hashedPassword,
+    } as any);
 
     return NextResponse.json(
       {
         status: 'success',
-        message: 'Registration successful. Please check your email for verification code.',
-        payload: { email: newUser.email },
+        message: 'Registration successful.',
+        payload: {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+        },
       },
       { status: 201 }
     );

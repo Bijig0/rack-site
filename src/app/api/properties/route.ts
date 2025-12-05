@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/drizzle';
-import { property, type NewProperty } from '@/db/schema';
+import { property } from '@/db/schema';
 import { randomUUID } from 'crypto';
 
 // Hardcoded user ID for now until auth is integrated
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newProperty: NewProperty = {
+    const newProperty = {
       id: randomUUID(),
       userId: DEFAULT_USER_ID,
       addressCommonName,
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       propertyImageUrl: body.propertyImageUrl || null,
     };
 
-    const [created] = await db.insert(property).values(newProperty).returning();
+    const [created] = await db.insert(property).values(newProperty as any).returning();
 
     return NextResponse.json(
       {

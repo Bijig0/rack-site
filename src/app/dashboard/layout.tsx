@@ -6,10 +6,10 @@ import DboardMobileNavigation from "@/components/property/dashboard/DboardMobile
 import { getUserProperties, getUserPropertyCount } from "@/actions/properties";
 
 // Preload data at layout level for immediate availability
-export const preload = () => {
+function preloadData() {
   void getUserProperties();
   void getUserPropertyCount();
-};
+}
 
 export default function DashboardLayout({
   children,
@@ -17,7 +17,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   // Start preloading immediately when layout renders
-  preload();
+  preloadData();
 
   return (
     <>

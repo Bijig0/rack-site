@@ -1,73 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { eq, and, gt } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { users } from '@/db/schema';
+import { user, verification } from '@/db/schema';
 import { signToken, setAuthCookie } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, otp } = await request.json();
+    const { email, token } = await request.json();
 
-    if (!email || !otp) {
+    if (!email || !token) {
       return NextResponse.json(
-        { status: 'fail', message: 'Email and OTP are required' },
+        { status: 'fail', message: 'Email and token are required' },
+        { status: 400 }
+      );
+    }
+
+    // Find verification token
+    const [verificationRecord] = await db
+      .select()
+      .from(verification)
+      .where(
+        and(
+          eq(verification.identifier, email.toLowerCase()),
+          eq(verification.value, token),
+          gt(verification.expiresAt, new Date())
+        )
+      );
+
+    if (!verificationRecord) {
+      return NextResponse.json(
+        { status: 'fail', message: 'Invalid or expired token' },
         { status: 400 }
       );
     }
 
     // Find user
-    const [user] = await db
+    const [foundUser] = await db
       .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()));
+      .from(user)
+      .where(eq(user.email, email.toLowerCase()));
 
-    if (!user) {
+    if (!foundUser) {
       return NextResponse.json(
         { status: 'fail', message: 'User not found' },
         { status: 404 }
       );
     }
 
-    // Check OTP
-    if (user.otp !== otp) {
-      return NextResponse.json(
-        { status: 'fail', message: 'Invalid OTP' },
-        { status: 400 }
-      );
-    }
-
-    // Check OTP expiry
-    if (!user.otpExpiresAt || new Date() > user.otpExpiresAt) {
-      return NextResponse.json(
-        { status: 'fail', message: 'OTP has expired' },
-        { status: 400 }
-      );
-    }
-
-    // Verify user and clear OTP
+    // Mark user as verified
     await db
-      .update(users)
+      .update(user)
       .set({
-        isVerified: true,
-        status: 'active',
-        otp: null,
-        otpExpiresAt: null,
+        emailVerified: true,
         updatedAt: new Date(),
-      })
-      .where(eq(users.id, user.id));
+      } as any)
+      .where(eq(user.id, foundUser.id));
+
+    // Delete used verification token
+    await db
+      .delete(verification)
+      .where(eq(verification.id, verificationRecord.id));
 
     // Create JWT and set cookie
-    const token = await signToken({ userId: user.id, email: user.email });
-    await setAuthCookie(token);
+    const jwtToken = await signToken({ userId: foundUser.id, email: foundUser.email });
+    await setAuthCookie(jwtToken);
 
     return NextResponse.json({
       status: 'success',
       message: 'Email verified successfully',
       payload: {
         user: {
-          id: user.id,
-          email: user.email,
-          fullName: user.fullName,
+          id: foundUser.id,
+          email: foundUser.email,
+          name: foundUser.name,
         },
       },
     });

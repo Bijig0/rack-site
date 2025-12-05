@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { users } from '@/db/schema';
-import { sendOtpEmail, generateOtp } from '@/lib/email';
+import { user, verification } from '@/db/schema';
+import { nanoid } from 'nanoid';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,50 +16,48 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user
-    const [user] = await db
+    const [foundUser] = await db
       .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()));
+      .from(user)
+      .where(eq(user.email, email.toLowerCase()));
 
-    if (!user) {
+    if (!foundUser) {
       return NextResponse.json(
         { status: 'fail', message: 'User not found' },
         { status: 404 }
       );
     }
 
-    if (user.isVerified) {
+    if (foundUser.emailVerified) {
       return NextResponse.json(
         { status: 'fail', message: 'Email is already verified' },
         { status: 400 }
       );
     }
 
-    // Generate new OTP
-    const otp = generateOtp();
-    const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    // Generate new verification token
+    const verificationToken = nanoid(32);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    // Update user with new OTP
-    await db
-      .update(users)
-      .set({
-        otp,
-        otpExpiresAt,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, user.id));
+    // Store verification token
+    await db.insert(verification).values({
+      id: nanoid(),
+      identifier: email.toLowerCase(),
+      value: verificationToken,
+      expiresAt,
+    });
 
-    // Send OTP email
-    await sendOtpEmail(email, otp);
+    // In production, you would send an email with the verification link
+    console.log(`[Email Verification] Token for ${email}: ${verificationToken}`);
 
     return NextResponse.json({
       status: 'success',
-      message: 'OTP sent successfully',
+      message: 'Verification link sent successfully',
     });
   } catch (error) {
     console.error('[POST /api/auth/resend-otp]', error);
     return NextResponse.json(
-      { status: 'fail', message: 'Failed to resend OTP' },
+      { status: 'fail', message: 'Failed to resend verification' },
       { status: 500 }
     );
   }

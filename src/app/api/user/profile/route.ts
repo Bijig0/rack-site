@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { users } from '@/db/schema';
+import { user } from '@/db/schema';
 import { getSession } from '@/lib/auth';
 
 export async function GET() {
@@ -14,18 +14,19 @@ export async function GET() {
       );
     }
 
-    const [user] = await db
+    const [foundUser] = await db
       .select({
-        id: users.id,
-        email: users.email,
-        fullName: users.fullName,
-        image: users.image,
-        createdAt: users.createdAt,
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        emailVerified: user.emailVerified,
+        image: user.image,
+        createdAt: user.createdAt,
       })
-      .from(users)
-      .where(eq(users.id, session.userId));
+      .from(user)
+      .where(eq(user.id, session.userId));
 
-    if (!user) {
+    if (!foundUser) {
       return NextResponse.json(
         { status: 'fail', message: 'User not found' },
         { status: 404 }
@@ -34,7 +35,7 @@ export async function GET() {
 
     return NextResponse.json({
       status: 'success',
-      payload: user,
+      payload: foundUser,
     });
   } catch (error) {
     console.error('[GET /api/user/profile]', error);
@@ -56,22 +57,22 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const updateData: Partial<typeof users.$inferInsert> = {
+    const updateData: Record<string, any> = {
       updatedAt: new Date(),
     };
 
-    if (body.fullName !== undefined) updateData.fullName = body.fullName;
+    if (body.name !== undefined) updateData.name = body.name;
     if (body.image !== undefined) updateData.image = body.image;
 
     const [updated] = await db
-      .update(users)
-      .set(updateData)
-      .where(eq(users.id, session.userId))
+      .update(user)
+      .set(updateData as any)
+      .where(eq(user.id, session.userId))
       .returning({
-        id: users.id,
-        email: users.email,
-        fullName: users.fullName,
-        image: users.image,
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        image: user.image,
       });
 
     return NextResponse.json({

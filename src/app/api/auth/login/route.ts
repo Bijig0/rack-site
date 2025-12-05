@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { compare } from 'bcryptjs';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { users } from '@/db/schema';
+import { user, account } from '@/db/schema';
 import { signToken, setAuthCookie } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
@@ -16,29 +16,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user
-    const [user] = await db
+    // Find user by email
+    const [foundUser] = await db
       .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()));
+      .from(user)
+      .where(eq(user.email, email.toLowerCase()));
 
-    if (!user) {
+    if (!foundUser) {
       return NextResponse.json(
         { status: 'fail', message: 'Invalid email or password' },
         { status: 401 }
       );
     }
 
-    // Check if user is verified
-    if (!user.isVerified) {
+    // Get the credential account (password stored in account table for BetterAuth)
+    const [credentialAccount] = await db
+      .select()
+      .from(account)
+      .where(
+        and(
+          eq(account.userId, foundUser.id),
+          eq(account.providerId, 'credential')
+        )
+      );
+
+    if (!credentialAccount || !credentialAccount.password) {
       return NextResponse.json(
-        { status: 'fail', message: 'Please verify your email first' },
+        { status: 'fail', message: 'Invalid email or password' },
         { status: 401 }
       );
     }
 
     // Check password
-    const isPasswordValid = await compare(password, user.password);
+    const isPasswordValid = await compare(password, credentialAccount.password);
     if (!isPasswordValid) {
       return NextResponse.json(
         { status: 'fail', message: 'Invalid email or password' },
@@ -46,14 +56,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update last login
-    await db
-      .update(users)
-      .set({ lastLogin: new Date() })
-      .where(eq(users.id, user.id));
-
     // Create JWT and set cookie
-    const token = await signToken({ userId: user.id, email: user.email });
+    const token = await signToken({ userId: foundUser.id, email: foundUser.email });
     await setAuthCookie(token);
 
     return NextResponse.json({
@@ -61,9 +65,9 @@ export async function POST(request: NextRequest) {
       message: 'Login successful',
       payload: {
         user: {
-          id: user.id,
-          email: user.email,
-          fullName: user.fullName,
+          id: foundUser.id,
+          email: foundUser.email,
+          name: foundUser.name,
         },
       },
     });

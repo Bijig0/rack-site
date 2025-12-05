@@ -2,15 +2,12 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '@/db/schema';
 
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error('DATABASE_URL environment variable is required');
-}
+// Use the same connection string as @/db/drizzle
+const connectionString = process.env.DATABASE_URL || 'postgres://postgres:dAA2eF5B3cfe5G42f4gFEeA3gf114gd5@metro.proxy.rlwy.net:37409/railway';
 
 // Connection pool optimized for serverless
 const queryClient = postgres(connectionString, {
-  max: 10,
+  max: 1,
   idle_timeout: 20,
   connect_timeout: 10,
 });
