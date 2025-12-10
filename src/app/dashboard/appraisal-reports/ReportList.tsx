@@ -15,6 +15,19 @@ type Report = {
   createdAt: Date;
 };
 
+// Spinning loader component for generating state
+function GeneratingSpinner({ size = 14 }: { size?: number }) {
+  return (
+    <span
+      className="spinner-border spinner-border-sm"
+      role="status"
+      style={{ width: size, height: size, borderWidth: 2 }}
+    >
+      <span className="visually-hidden">Generating...</span>
+    </span>
+  );
+}
+
 function ReportCard({ report }: { report: Report }) {
   const reportDate = new Date(report.createdAt).toLocaleDateString("en-AU", {
     day: "numeric",
@@ -22,11 +35,17 @@ function ReportCard({ report }: { report: Report }) {
     year: "numeric",
   });
 
+  const isGenerating =
+    report.status === "pending" || report.status === "processing";
+
   return (
     <div className="col-sm-6 col-xl-4">
       <div
         className="ps-widget bgc-white bdrs12 p30 mb30 overflow-hidden position-relative"
-        style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}
+        style={{
+          boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+          border: isGenerating ? "2px solid #3b82f6" : "none",
+        }}
       >
         {/* Header with address and download button */}
         <div className="d-flex justify-content-between align-items-start mb20">
@@ -61,16 +80,33 @@ function ReportCard({ report }: { report: Report }) {
             </a>
           ) : (
             <span
-              className="badge flex-shrink-0 fz12"
+              className="badge flex-shrink-0 fz12 d-inline-flex align-items-center gap-1"
               style={{
-                backgroundColor: report.status === "processing" ? "#e3f2fd" : "#fff8e1",
-                color: report.status === "processing" ? "#1565c0" : "#f57c00",
+                backgroundColor: report.status === "processing" ? "#3b82f6" : "#f59e0b",
+                color: "#fff",
                 padding: "8px 12px",
               }}
             >
-              {report.status === "processing" ? "Processing" : "Pending"}
+              <GeneratingSpinner size={10} />
+              {report.status === "processing" ? "Generating..." : "Pending"}
             </span>
           )}
+        </div>
+
+        {/* Report ID */}
+        <div className="mb10 fz13">
+          <span style={{ color: "#888" }}>Report ID</span>
+          <code
+            className="ms-2"
+            style={{
+              fontSize: 11,
+              backgroundColor: "#f5f5f5",
+              padding: "2px 6px",
+              borderRadius: 4,
+            }}
+          >
+            {report.id.slice(0, 8)}...
+          </code>
         </div>
 
         {/* Property Details label */}
@@ -100,13 +136,49 @@ function ReportCard({ report }: { report: Report }) {
           )}
         </div>
 
-        {/* Report Creation Date */}
+        {/* Report Creation Date or Generating Status */}
         <div className="fz14">
-          <span style={{ color: "#888" }}>Report Creation Date</span>
-          <span className="ms-3" style={{ color: "#222" }}>
-            {reportDate}
-          </span>
+          {isGenerating ? (
+            <div className="d-flex align-items-center gap-2">
+              <GeneratingSpinner size={14} />
+              <span
+                style={{
+                  color: "#3b82f6",
+                  fontWeight: 500,
+                }}
+              >
+                Report generating...
+              </span>
+            </div>
+          ) : (
+            <>
+              <span style={{ color: "#888" }}>Report Creation Date</span>
+              <span className="ms-3" style={{ color: "#222" }}>
+                {reportDate}
+              </span>
+            </>
+          )}
         </div>
+
+        {/* Generating badge overlay */}
+        {isGenerating && (
+          <div
+            className="position-absolute"
+            style={{
+              top: 10,
+              left: 10,
+              backgroundColor: "#3b82f6",
+              color: "#fff",
+              padding: "4px 10px",
+              borderRadius: 6,
+              fontSize: 11,
+              fontWeight: 600,
+              zIndex: 2,
+            }}
+          >
+            <GeneratingSpinner size={10} /> <span className="ms-1">Generating</span>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { ToastContainer, ToastMessage } from "@/components/common/Toast";
 import { revalidateProperties } from "@/actions/properties";
 
@@ -27,6 +28,7 @@ const STORAGE_KEY = "pending-property-jobs";
 export function PropertyJobsProvider({ children }: { children: ReactNode }) {
   const [pendingJobs, setPendingJobs] = useState<PendingJob[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const router = useRouter();
 
   // Load pending jobs from localStorage on mount
   useEffect(() => {
@@ -83,6 +85,10 @@ export function PropertyJobsProvider({ children }: { children: ReactNode }) {
             // Revalidate the properties cache
             await revalidateProperties();
 
+            // Trigger a client-side refresh to update any server components
+            // This fixes the dashboard skeleton stuck issue
+            router.refresh();
+
             // Remove the job after a short delay
             setTimeout(() => {
               setPendingJobs((prev) => prev.filter((j) => j.jobId !== job.jobId));
@@ -123,7 +129,7 @@ export function PropertyJobsProvider({ children }: { children: ReactNode }) {
     }, 2000); // Poll every 2 seconds
 
     return () => clearInterval(pollInterval);
-  }, [pendingJobs]);
+  }, [pendingJobs, router]);
 
   const addJob = useCallback((job: Omit<PendingJob, "status">) => {
     setPendingJobs((prev) => [...prev, { ...job, status: "pending" }]);
@@ -134,7 +140,7 @@ export function PropertyJobsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const showToast = useCallback((type: ToastMessage["type"], message: string) => {
-    const id = Math.random().toString(36).substr(2, 9);
+    const id = Math.random().toString(36).slice(2, 11);
     setToasts((prev) => [...prev, { id, type, message }]);
   }, []);
 

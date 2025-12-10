@@ -145,11 +145,36 @@ export default async function PropertyDetailPage({
                   {property.propertyType}
                 </p>
               )}
-              <span className="ff-heading text-thm fz15 bdrr1 pr10 ml0-sm ml10 bdrrn-sm">
-                <i className="fas fa-circle fz10 pe-2" />
+              <span
+                className="ff-heading fz15 bdrr1 pr10 ml0-sm ml10 bdrrn-sm d-inline-flex align-items-center"
+                style={{
+                  color:
+                    latestAppraisal?.status === "completed"
+                      ? "#22c55e"
+                      : latestAppraisal?.status === "processing" ||
+                        latestAppraisal?.status === "pending"
+                      ? "#3b82f6"
+                      : "#888",
+                }}
+              >
+                {(latestAppraisal?.status === "processing" ||
+                  latestAppraisal?.status === "pending") && (
+                  <span
+                    className="spinner-border spinner-border-sm me-2"
+                    style={{ width: 12, height: 12, borderWidth: 2 }}
+                  />
+                )}
+                {latestAppraisal?.status !== "processing" &&
+                  latestAppraisal?.status !== "pending" && (
+                    <i className="fas fa-circle fz10 pe-2" />
+                  )}
                 {latestAppraisal?.status === "completed"
                   ? "Report Ready"
-                  : "Pending Report"}
+                  : latestAppraisal?.status === "processing"
+                  ? "Generating Report..."
+                  : latestAppraisal?.status === "pending"
+                  ? "Report Pending"
+                  : "No Report"}
               </span>
               <span className="ff-heading fz15 ml10 ml0-sm">
                 <i className="far fa-clock pe-2" />
@@ -386,44 +411,95 @@ export default async function PropertyDetailPage({
                 <table className="table">
                   <thead>
                     <tr>
+                      <th>Report ID</th>
                       <th>Date Generated</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {appraisals.map((appraisal) => (
-                      <tr key={appraisal.id}>
-                        <td>{formatDate(appraisal.createdAt)}</td>
-                        <td>
-                          <span
-                            className={`badge ${
-                              appraisal.status === "completed"
-                                ? "bg-success"
-                                : appraisal.status === "pending"
-                                ? "bg-warning"
-                                : appraisal.status === "processing"
-                                ? "bg-info"
-                                : "bg-danger"
-                            }`}
-                          >
-                            {appraisal.status}
-                          </span>
-                        </td>
-                        <td>
-                          {appraisal.pdfUrl && (
-                            <a
-                              href={appraisal.pdfUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn btn-sm btn-outline-primary"
+                    {appraisals.map((appraisal) => {
+                      const isGenerating =
+                        appraisal.status === "pending" ||
+                        appraisal.status === "processing";
+
+                      return (
+                        <tr
+                          key={appraisal.id}
+                          style={{
+                            backgroundColor: isGenerating
+                              ? "rgba(59, 130, 246, 0.05)"
+                              : undefined,
+                          }}
+                        >
+                          <td>
+                            <code
+                              style={{
+                                fontSize: 12,
+                                backgroundColor: "#f5f5f5",
+                                padding: "2px 6px",
+                                borderRadius: 4,
+                              }}
                             >
-                              <i className="fas fa-file-pdf me-1"></i> View PDF
-                            </a>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                              {appraisal.id.slice(0, 8)}...
+                            </code>
+                          </td>
+                          <td>{formatDate(appraisal.createdAt)}</td>
+                          <td>
+                            {isGenerating ? (
+                              <span
+                                className="badge d-inline-flex align-items-center gap-1"
+                                style={{
+                                  backgroundColor:
+                                    appraisal.status === "processing"
+                                      ? "#3b82f6"
+                                      : "#f59e0b",
+                                  color: "#fff",
+                                }}
+                              >
+                                <span
+                                  className="spinner-border spinner-border-sm"
+                                  style={{
+                                    width: 10,
+                                    height: 10,
+                                    borderWidth: 2,
+                                  }}
+                                />
+                                {appraisal.status === "processing"
+                                  ? "Generating..."
+                                  : "Pending"}
+                              </span>
+                            ) : (
+                              <span
+                                className={`badge ${
+                                  appraisal.status === "completed"
+                                    ? "bg-success"
+                                    : "bg-danger"
+                                }`}
+                              >
+                                {appraisal.status}
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            {appraisal.pdfUrl ? (
+                              <a
+                                href={appraisal.pdfUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-sm btn-outline-primary"
+                              >
+                                <i className="fas fa-file-pdf me-1"></i> View PDF
+                              </a>
+                            ) : isGenerating ? (
+                              <span className="text-muted fz12">
+                                Report will be available soon
+                              </span>
+                            ) : null}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

@@ -4,6 +4,129 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { PropertyWithAppraisal } from "@/actions/properties";
+import { usePropertyJobs, type PendingJob } from "@/context/PropertyJobsContext";
+
+// Spinning loader component for generating state
+function GeneratingSpinner() {
+  return (
+    <div
+      className="spinner-border spinner-border-sm"
+      role="status"
+      style={{ width: 14, height: 14, borderWidth: 2 }}
+    >
+      <span className="visually-hidden">Generating...</span>
+    </div>
+  );
+}
+
+// Card for pending property creation jobs
+function PendingPropertyCard({ job, onDismiss }: { job: PendingJob; onDismiss: () => void }) {
+  const isError = job.status === "error";
+
+  return (
+    <div className="col-sm-6 col-xl-4">
+      <div
+        className="ps-widget bgc-white bdrs12 p30 mb30 overflow-hidden position-relative"
+        style={{
+          boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+          border: isError ? "2px solid #ef4444" : "2px solid #3b82f6",
+        }}
+      >
+        {/* Creating/Error badge overlay */}
+        <div
+          className="position-absolute"
+          style={{
+            top: 10,
+            left: 10,
+            backgroundColor: isError ? "#ef4444" : "#3b82f6",
+            color: "#fff",
+            padding: "4px 10px",
+            borderRadius: 6,
+            fontSize: 11,
+            fontWeight: 600,
+            zIndex: 2,
+          }}
+        >
+          {isError ? (
+            <>
+              <i className="fas fa-exclamation-triangle" /> <span className="ms-1">Error</span>
+            </>
+          ) : (
+            <>
+              <GeneratingSpinner /> <span className="ms-1">Creating</span>
+            </>
+          )}
+        </div>
+
+        {/* Dismiss button for errors */}
+        {isError && (
+          <button
+            onClick={onDismiss}
+            className="btn p-0 position-absolute"
+            style={{ top: 10, right: 10, zIndex: 2 }}
+            title="Dismiss"
+          >
+            <i className="fas fa-times" style={{ color: "#666" }} />
+          </button>
+        )}
+
+        {/* Placeholder Thumbnail */}
+        <div
+          className="d-flex align-items-center justify-content-center mb20"
+          style={{
+            width: "100%",
+            height: 140,
+            borderRadius: 8,
+            backgroundColor: isError ? "#fef2f2" : "#eff6ff",
+          }}
+        >
+          {isError ? (
+            <i className="fas fa-exclamation-circle" style={{ fontSize: 40, color: "#ef4444" }} />
+          ) : (
+            <div
+              className="spinner-border"
+              role="status"
+              style={{ width: 40, height: 40, color: "#3b82f6" }}
+            >
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          )}
+        </div>
+
+        {/* Address */}
+        <h5
+          className="fw600 mb15"
+          style={{
+            color: "#222",
+            fontSize: 16,
+            lineHeight: 1.4,
+          }}
+        >
+          {job.addressCommonName}
+        </h5>
+
+        {/* Status message */}
+        <div className="fz14">
+          <div className="d-flex align-items-center gap-2">
+            {!isError && <GeneratingSpinner />}
+            <span
+              style={{
+                color: isError ? "#ef4444" : "#3b82f6",
+                fontWeight: 500,
+              }}
+            >
+              {isError
+                ? job.error || "Failed to create property"
+                : job.status === "processing"
+                ? "Fetching property data..."
+                : "Starting property creation..."}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function PropertyCard({ property }: { property: PropertyWithAppraisal }) {
   const lastAppraisalDate = property.latestAppraisal?.createdAt
@@ -14,11 +137,18 @@ function PropertyCard({ property }: { property: PropertyWithAppraisal }) {
       })
     : null;
 
+  const isGenerating =
+    property.latestAppraisal?.status === "pending" ||
+    property.latestAppraisal?.status === "processing";
+
   return (
     <div className="col-sm-6 col-xl-4">
       <div
         className="ps-widget bgc-white bdrs12 p30 mb30 overflow-hidden position-relative"
-        style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}
+        style={{
+          boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+          border: isGenerating ? "2px solid #3b82f6" : "none",
+        }}
       >
         {/* Three dots menu */}
         <div className="dropdown position-absolute" style={{ top: 16, right: 16, zIndex: 1 }}>
@@ -114,13 +244,49 @@ function PropertyCard({ property }: { property: PropertyWithAppraisal }) {
           )}
         </div>
 
-        {/* Last Appraisal Date */}
+        {/* Last Appraisal Date or Generating Status */}
         <div className="fz14">
-          <span style={{ color: "#888" }}>Last Appraisal</span>
-          <span className="ms-3" style={{ color: "#222" }}>
-            {lastAppraisalDate || "N/A"}
-          </span>
+          {isGenerating ? (
+            <div className="d-flex align-items-center gap-2">
+              <GeneratingSpinner />
+              <span
+                style={{
+                  color: "#3b82f6",
+                  fontWeight: 500,
+                }}
+              >
+                Generating Report...
+              </span>
+            </div>
+          ) : (
+            <>
+              <span style={{ color: "#888" }}>Last Appraisal</span>
+              <span className="ms-3" style={{ color: "#222" }}>
+                {lastAppraisalDate || "N/A"}
+              </span>
+            </>
+          )}
         </div>
+
+        {/* Generating badge overlay */}
+        {isGenerating && (
+          <div
+            className="position-absolute"
+            style={{
+              top: 10,
+              left: 10,
+              backgroundColor: "#3b82f6",
+              color: "#fff",
+              padding: "4px 10px",
+              borderRadius: 6,
+              fontSize: 11,
+              fontWeight: 600,
+              zIndex: 2,
+            }}
+          >
+            <GeneratingSpinner /> <span className="ms-1">Generating</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -132,10 +298,25 @@ interface PropertyListProps {
 
 export default function PropertyList({ properties }: PropertyListProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const { pendingJobs, removeJob } = usePropertyJobs();
+
+  // Get active pending jobs (pending, processing, or error)
+  const activePendingJobs = pendingJobs.filter(
+    (j) => j.status === "pending" || j.status === "processing" || j.status === "error"
+  );
 
   const filteredProperties = properties.filter((property) =>
     property.addressCommonName.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Also filter pending jobs by search
+  const filteredPendingJobs = searchQuery
+    ? activePendingJobs.filter((job) =>
+        job.addressCommonName.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : activePendingJobs;
+
+  const hasContent = filteredProperties.length > 0 || filteredPendingJobs.length > 0;
 
   return (
     <>
@@ -182,7 +363,22 @@ export default function PropertyList({ properties }: PropertyListProps) {
 
       {/* Property Cards Grid */}
       <div className="row">
-        {filteredProperties.length === 0 ? (
+        {/* Show pending property creation jobs first */}
+        {filteredPendingJobs.map((job) => (
+          <PendingPropertyCard
+            key={job.jobId}
+            job={job}
+            onDismiss={() => removeJob(job.jobId)}
+          />
+        ))}
+
+        {/* Show existing properties */}
+        {filteredProperties.map((property) => (
+          <PropertyCard key={property.id} property={property} />
+        ))}
+
+        {/* Empty state - only show if no pending jobs AND no properties */}
+        {!hasContent && (
           <div className="col-12">
             <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 text-center">
               {searchQuery ? (
@@ -214,10 +410,6 @@ export default function PropertyList({ properties }: PropertyListProps) {
               )}
             </div>
           </div>
-        ) : (
-          filteredProperties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))
         )}
       </div>
     </>
