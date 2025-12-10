@@ -4,15 +4,21 @@ import { db } from '@/db/drizzle';
 import { property } from '@/db/schema';
 import { randomUUID } from 'crypto';
 import { getSession } from '@/lib/auth';
+import { createScopedLogger, startTimer } from '@/lib/logger';
+
+const log = createScopedLogger('api/properties');
 
 /**
  * GET /api/properties
  * List all properties for the authenticated user.
  */
 export async function GET() {
+  const getElapsed = startTimer();
+
   try {
     const session = await getSession();
     if (!session) {
+      log.warn('Unauthorized properties list attempt');
       return NextResponse.json(
         { status: 'fail', message: 'Unauthorized' },
         { status: 401 }
@@ -24,12 +30,18 @@ export async function GET() {
       .from(property)
       .where(eq(property.userId, session.userId));
 
+    log.info('Properties listed', {
+      userId: session.userId,
+      count: userProperties.length,
+      durationMs: getElapsed(),
+    });
+
     return NextResponse.json({
       status: 'success',
       payload: userProperties,
     });
   } catch (error) {
-    console.error('[GET /api/properties]', error);
+    log.error('Failed to fetch properties', error, { durationMs: getElapsed() });
     return NextResponse.json(
       { status: 'fail', message: 'Failed to fetch properties' },
       { status: 500 }
@@ -42,9 +54,12 @@ export async function GET() {
  * Create a new property for the authenticated user.
  */
 export async function POST(request: NextRequest) {
+  const getElapsed = startTimer();
+
   try {
     const session = await getSession();
     if (!session) {
+      log.warn('Unauthorized property creation attempt');
       return NextResponse.json(
         { status: 'fail', message: 'Unauthorized' },
         { status: 401 }
@@ -56,6 +71,7 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     const { addressCommonName } = body;
     if (!addressCommonName) {
+      log.warn('Property creation with missing address', { userId: session.userId });
       return NextResponse.json(
         {
           status: 'fail',
@@ -81,6 +97,13 @@ export async function POST(request: NextRequest) {
 
     const [created] = await db.insert(property).values(newProperty as any).returning();
 
+    log.info('Property created', {
+      userId: session.userId,
+      propertyId: created.id,
+      address: addressCommonName,
+      durationMs: getElapsed(),
+    });
+
     return NextResponse.json(
       {
         status: 'success',
@@ -90,7 +113,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('[POST /api/properties]', error);
+    log.error('Failed to create property', error, { durationMs: getElapsed() });
     return NextResponse.json(
       { status: 'fail', message: 'Failed to create property' },
       { status: 500 }

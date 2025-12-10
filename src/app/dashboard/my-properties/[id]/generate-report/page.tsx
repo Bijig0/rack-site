@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { use, useState, useCallback, useRef } from "react";
+import Image from "next/image";
+import { use, useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { revalidateProperties, getPropertyById } from "@/actions/properties";
+import { getUserProfile, type UserProfile } from "@/actions/user";
 
 type JobStatus = {
   status: "waiting" | "active" | "completed" | "failed" | "success";
@@ -38,6 +40,7 @@ export default function GenerateReportPage({
   const [attemptCount, setAttemptCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
   const [errorHistory, setErrorHistory] = useState<ErrorInfo[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   // Track property data to avoid refetching on retry
   const propertyDataRef = useRef<{
@@ -46,6 +49,11 @@ export default function GenerateReportPage({
     state: string;
     postcode: string;
   } | null>(null);
+
+  // Load user profile on mount
+  useEffect(() => {
+    getUserProfile().then(setUserProfile);
+  }, []);
 
   // Poll job status
   const pollJobStatus = useCallback(async (statusUrl: string): Promise<void> => {
@@ -162,6 +170,9 @@ export default function GenerateReportPage({
         ...propertyData,
         propertyId: id,
         attemptNumber: currentAttempt, // Send attempt number for server-side tracking
+        // Include company branding info for the report
+        companyName: userProfile?.companyName || null,
+        companyLogoUrl: userProfile?.companyLogoUrl || null,
       }),
     });
 
@@ -181,7 +192,7 @@ export default function GenerateReportPage({
 
     // Start polling for status
     await pollJobStatus(statusUrl);
-  }, [id, pollJobStatus]);
+  }, [id, pollJobStatus, userProfile]);
 
   // Handle retry with delay
   const handleRetry = useCallback(async (errorMessage: string, currentAttempt: number) => {
@@ -278,6 +289,67 @@ export default function GenerateReportPage({
               Report generation typically takes 1-2 minutes. You will be
               redirected back to the property page once the report is ready.
             </div>
+
+            {/* Company Branding Preview */}
+            {(userProfile?.companyName || userProfile?.companyLogoUrl) && (
+              <div className="mb30 p-3 border rounded" style={{ backgroundColor: "#f8f9fa" }}>
+                <h6 className="fz14 mb-3 d-flex align-items-center">
+                  <i className="fas fa-building me-2 text-muted"></i>
+                  Company Branding
+                </h6>
+                <div className="d-flex align-items-center gap-3">
+                  {userProfile?.companyLogoUrl && (
+                    <div
+                      className="position-relative"
+                      style={{
+                        width: 60,
+                        height: 60,
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        border: "1px solid #e0e0e0",
+                        backgroundColor: "#fff",
+                      }}
+                    >
+                      <Image
+                        src={userProfile.companyLogoUrl}
+                        alt="Company Logo"
+                        fill
+                        style={{ objectFit: "contain" }}
+                      />
+                    </div>
+                  )}
+                  <div>
+                    {userProfile?.companyName && (
+                      <p className="mb-0 fw500">{userProfile.companyName}</p>
+                    )}
+                    <small className="text-muted">
+                      This branding will appear on your report
+                    </small>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!userProfile?.companyName && !userProfile?.companyLogoUrl && (
+              <div className="mb30 p-3 border rounded" style={{ backgroundColor: "#fff8e6", borderColor: "#ffc107" }}>
+                <div className="d-flex align-items-start gap-2">
+                  <i className="fas fa-lightbulb text-warning mt-1"></i>
+                  <div>
+                    <p className="mb-1 fz14 fw500">Add your company branding</p>
+                    <p className="mb-2 fz13 text-muted">
+                      Personalize your reports with your company logo and name.
+                    </p>
+                    <Link
+                      href="/dashboard/profile"
+                      className="btn btn-sm btn-outline-warning"
+                    >
+                      <i className="fas fa-cog me-1"></i>
+                      Set up branding
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {error && (
               <div className="alert alert-danger mb30">

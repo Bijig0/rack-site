@@ -7,11 +7,17 @@ import {
   getMaxFileSize,
   isStorageConfigured,
 } from '@/lib/storage';
+import { createScopedLogger, startTimer } from '@/lib/logger';
+
+const log = createScopedLogger('api/upload');
 
 export async function POST(request: NextRequest) {
+  const getElapsed = startTimer();
+
   try {
     // Check if storage is configured
     if (!isStorageConfigured()) {
+      log.warn('Upload attempted but storage is not configured');
       return NextResponse.json(
         { error: 'Storage is not configured. Please contact the administrator.' },
         { status: 503 }
@@ -21,6 +27,7 @@ export async function POST(request: NextRequest) {
     // Verify authentication
     const session = await getSession();
     if (!session?.userId) {
+      log.warn('Unauthorized upload attempt');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -33,6 +40,7 @@ export async function POST(request: NextRequest) {
     const folder = (formData.get('folder') as string) || 'uploads';
 
     if (!file) {
+      log.warn('Upload attempt with no file', { userId: session.userId });
       return NextResponse.json(
         { error: 'No file provided' },
         { status: 400 }
@@ -41,6 +49,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file type
     if (!isValidImageType(file.type)) {
+      log.warn('Upload attempt with invalid file type', { userId: session.userId, fileType: file.type });
       return NextResponse.json(
         { error: 'Invalid file type. Allowed: JPEG, PNG, GIF, WebP' },
         { status: 400 }
@@ -51,6 +60,7 @@ export async function POST(request: NextRequest) {
     const maxSize = getMaxFileSize();
     if (file.size > maxSize) {
       const maxMB = Math.round(maxSize / (1024 * 1024));
+      log.warn('Upload attempt with file too large', { userId: session.userId, fileSize: file.size, maxSize });
       return NextResponse.json(
         { error: `File too large. Maximum size: ${maxMB}MB` },
         { status: 400 }
@@ -67,13 +77,22 @@ export async function POST(request: NextRequest) {
     // Upload to storage
     const result = await uploadFile(buffer, key, file.type);
 
+    log.info('File uploaded successfully', {
+      userId: session.userId,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      key: result.key,
+      durationMs: getElapsed(),
+    });
+
     return NextResponse.json({
       success: true,
       url: result.url,
       key: result.key,
     });
   } catch (error) {
-    console.error('Upload error:', error);
+    log.error('Upload failed', error, { durationMs: getElapsed() });
     return NextResponse.json(
       { error: 'Failed to upload file' },
       { status: 500 }

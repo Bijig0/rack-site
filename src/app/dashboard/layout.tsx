@@ -4,7 +4,7 @@ import Footer from "@/components/property/dashboard/Footer";
 import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
 import DboardMobileNavigation from "@/components/property/dashboard/DboardMobileNavigation";
 import DashboardMainContent from "@/components/property/dashboard/DashboardMainContent";
-import { preloadProperties } from "@/lib/preload";
+import { preloadDashboardData } from "@/lib/preload";
 import { PropertyJobsProvider } from "@/context/PropertyJobsContext";
 import { SidebarProvider } from "@/context/SidebarContext";
 
@@ -14,7 +14,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   // Preload data at layout level - warms the cache for child pages
-  preloadProperties();
+  // This prefetches properties, property count, and appraisal reports
+  preloadDashboardData();
 
   return (
     <PropertyJobsProvider>

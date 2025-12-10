@@ -2,11 +2,82 @@ import DefaultHeader from "@/components/common/DefaultHeader";
 import MobileMenu from "@/components/common/mobile-menu";
 import Footer from "@/components/home/home-v4/footer";
 import HeroSection from "@/components/home/HeroSection";
+import BlogSection from "@/components/blog/BlogSection";
 import Image from "next/image";
 import Link from "next/link";
+import { Metadata } from "next";
+import { Suspense } from "react";
 
-export const metadata = {
-  title: "Rental Appraisal Report Generator",
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://rack.com.au";
+const siteName = "Rack - Rental Appraisal Report Generator";
+
+export const metadata: Metadata = {
+  title: {
+    default: "Rack - Rental Appraisal Report Generator | Data-Driven Property Insights",
+    template: "%s | Rack",
+  },
+  description:
+    "Generate professional rental appraisal reports in minutes with data-driven insights from CoreLogic, AirDNA, and more. Perfect for buyer agents, property managers, and investors.",
+  keywords: [
+    "rental appraisal",
+    "property appraisal",
+    "rental report generator",
+    "property management",
+    "buyer agent tools",
+    "short-term rental analysis",
+    "AirDNA integration",
+    "CoreLogic data",
+    "property investment",
+    "real estate analytics",
+    "rental yield calculator",
+    "property valuation",
+  ],
+  authors: [{ name: "Rack" }],
+  creator: "Rack",
+  publisher: "Rack",
+  metadataBase: new URL(siteUrl),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_AU",
+    url: siteUrl,
+    siteName: siteName,
+    title: "Rack - Rental Appraisal Report Generator | Data-Driven Property Insights",
+    description:
+      "Generate professional rental appraisal reports in minutes with data-driven insights. Perfect for buyer agents, property managers, and investors.",
+    images: [
+      {
+        url: "/images/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Rack - Rental Appraisal Report Generator",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Rack - Rental Appraisal Report Generator",
+    description:
+      "Generate professional rental appraisal reports in minutes with data-driven insights.",
+    images: ["/images/og-image.png"],
+    creator: "@rack_au",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+  },
 };
 
 const pricingFeatures = [
@@ -164,9 +235,77 @@ const faqItems = [
   },
 ];
 
+// JSON-LD structured data for SEO
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}/#website`,
+      url: siteUrl,
+      name: siteName,
+      description: "Generate professional rental appraisal reports in minutes with data-driven insights.",
+      publisher: {
+        "@id": `${siteUrl}/#organization`,
+      },
+    },
+    {
+      "@type": "Organization",
+      "@id": `${siteUrl}/#organization`,
+      name: "Rack",
+      url: siteUrl,
+      logo: {
+        "@type": "ImageObject",
+        url: `${siteUrl}/images/logo.png`,
+      },
+      sameAs: [
+        "https://twitter.com/rack_au",
+        "https://linkedin.com/company/rack-au",
+      ],
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: "Rack Rental Appraisal Generator",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      offers: {
+        "@type": "AggregateOffer",
+        lowPrice: "29",
+        highPrice: "99",
+        priceCurrency: "AUD",
+        offerCount: 3,
+      },
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: "5",
+        ratingCount: "3",
+        bestRating: "5",
+        worstRating: "1",
+      },
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faqItems.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: item.answer,
+        },
+      })),
+    },
+  ],
+};
+
 const Home_V4 = () => {
   return (
     <>
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* Main Header Nav */}
       <DefaultHeader />
       {/* End Main Header Nav */}
@@ -589,6 +728,12 @@ const Home_V4 = () => {
         </div>
       </section>
       {/* End Pricing Section */}
+
+      {/* Blog Section */}
+      <Suspense fallback={null}>
+        <BlogSection />
+      </Suspense>
+      {/* End Blog Section */}
 
       {/* FAQ Section */}
       <section className="pt100 pb100 bgc-f7">

@@ -8,6 +8,9 @@ import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
 import { getSession } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
+import { createScopedLogger } from '@/lib/logger';
+
+const log = createScopedLogger('actions/properties');
 
 /**
  * Get current authenticated user ID
@@ -281,10 +284,12 @@ export async function deleteProperty(propertyId: string): Promise<{ success: boo
       .limit(1);
 
     if (existingProperty.length === 0) {
+      log.warn('Delete attempt for non-existent property', { propertyId, userId });
       return { success: false, error: 'Property not found' };
     }
 
     if (existingProperty[0].userId !== userId) {
+      log.warn('Unauthorized delete attempt', { propertyId, userId, ownerId: existingProperty[0].userId });
       return { success: false, error: 'You do not have permission to delete this property' };
     }
 
@@ -297,9 +302,11 @@ export async function deleteProperty(propertyId: string): Promise<{ success: boo
     // Revalidate the cache
     revalidateTag('properties');
 
+    log.info('Property deleted', { propertyId, userId });
+
     return { success: true };
   } catch (error) {
-    console.error('Error deleting property:', error);
+    log.error('Error deleting property', error, { propertyId });
     return { success: false, error: 'Failed to delete property' };
   }
 }
@@ -332,9 +339,11 @@ export async function createProperty(input: CreatePropertyInput): Promise<{ succ
     // Revalidate the cache
     revalidateTag('properties');
 
+    log.info('Property created', { propertyId, userId, address: addressCommonName });
+
     return { success: true, propertyId };
   } catch (error) {
-    console.error('Error creating property:', error);
+    log.error('Error creating property', error, { userId: 'unknown', input });
     return { success: false, error: 'Failed to create property' };
   }
 }
@@ -365,10 +374,12 @@ export async function updateProperty(
       .limit(1);
 
     if (existingProperty.length === 0) {
+      log.warn('Update attempt for non-existent property', { propertyId, userId });
       return { success: false, error: 'Property not found' };
     }
 
     if (existingProperty[0].userId !== userId) {
+      log.warn('Unauthorized update attempt', { propertyId, userId, ownerId: existingProperty[0].userId });
       return { success: false, error: 'You do not have permission to update this property' };
     }
 
@@ -409,9 +420,11 @@ export async function updateProperty(
     // Revalidate the cache
     revalidateTag('properties');
 
+    log.info('Property updated', { propertyId, userId });
+
     return { success: true };
   } catch (error) {
-    console.error('Error updating property:', error);
+    log.error('Error updating property', error, { propertyId });
     return { success: false, error: 'Failed to update property' };
   }
 }

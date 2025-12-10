@@ -7,7 +7,7 @@ import { nanoid } from 'nanoid';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json();
+    const { name, email, password, companyName } = await request.json();
 
     // Validate required fields
     if (!email || !password) {
@@ -53,8 +53,9 @@ export async function POST(request: NextRequest) {
         email: email.toLowerCase(),
         emailVerified: false,
         role: 'real-estate-agent',
+        companyName: companyName || null,
       } as any)
-      .returning({ id: user.id, email: user.email, name: user.name });
+      .returning({ id: user.id, email: user.email, name: user.name, companyName: user.companyName });
 
     // Create credential account with password
     await db.insert(account).values({

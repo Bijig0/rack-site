@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getUserProperties, getUserPropertyCount } from "@/actions/properties";
 import { getUserAppraisalReports } from "@/actions/appraisals";
+import { getUserProfile } from "@/actions/user";
 
 export const metadata = {
   title: "Dashboard | Homez",
@@ -181,6 +182,120 @@ async function PropertiesList() {
   );
 }
 
+// Company Branding Card - shows setup prompt if not configured
+async function CompanyBrandingCard() {
+  const profile = await getUserProfile();
+
+  // If company branding is already set up, show a summary
+  if (profile?.companyName || profile?.companyLogoUrl) {
+    return (
+      <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
+        <div className="d-flex align-items-center justify-content-between mb20">
+          <h4 className="title fz17 mb-0">Company Branding</h4>
+          <Link
+            href="/dashboard/profile"
+            className="fz12 text-decoration-none"
+            style={{ color: "#666" }}
+          >
+            Edit
+          </Link>
+        </div>
+        <div className="d-flex align-items-center gap-3">
+          {profile.companyLogoUrl ? (
+            <div
+              className="position-relative flex-shrink-0"
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: 8,
+                overflow: "hidden",
+                border: "1px solid #e0e0e0",
+                backgroundColor: "#fff",
+              }}
+            >
+              <Image
+                src={profile.companyLogoUrl}
+                alt="Company Logo"
+                fill
+                style={{ objectFit: "contain" }}
+              />
+            </div>
+          ) : (
+            <div
+              className="flex-shrink-0"
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: 8,
+                backgroundColor: "#f5f5f5",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "1px solid #e0e0e0",
+              }}
+            >
+              <i className="fas fa-building fz20 text-muted" />
+            </div>
+          )}
+          <div>
+            {profile.companyName && (
+              <p className="mb-1 fw500 fz15">{profile.companyName}</p>
+            )}
+            <p className="mb-0 fz12 text-muted">
+              <i className="fas fa-check-circle text-success me-1" />
+              Branding active on reports
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show setup prompt if not configured
+  return (
+    <div
+      className="ps-widget bdrs12 p30 mb30 overflow-hidden position-relative"
+      style={{
+        background: "linear-gradient(135deg, #1a1f3c 0%, #2d3561 100%)",
+        color: "#fff",
+      }}
+    >
+      <div className="d-flex align-items-start gap-3">
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 12,
+            background: "rgba(235,103,83,0.2)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <i className="fas fa-building" style={{ color: "#eb6753", fontSize: 20 }} />
+        </div>
+        <div className="flex-grow-1">
+          <h5 className="fz16 mb-2" style={{ color: "#fff" }}>
+            Add Your Company Branding
+          </h5>
+          <p className="fz13 mb-3" style={{ color: "rgba(255,255,255,0.7)" }}>
+            Personalize your appraisal reports with your company logo and name for a professional touch.
+          </p>
+          <Link
+            href="/dashboard/profile"
+            className="ud-btn btn-white btn-sm"
+            style={{ padding: "8px 16px", fontSize: 13 }}
+          >
+            <i className="fas fa-plus me-2" />
+            Set Up Branding
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Rental Appraisal Reports component
 async function AppraisalReportsList() {
   const reports = await getUserAppraisalReports();
@@ -311,6 +426,11 @@ export default function DashboardPage() {
         </div>
 
         <div className="col-xl-4">
+          {/* Company Branding Card */}
+          <Suspense fallback={null}>
+            <CompanyBrandingCard />
+          </Suspense>
+
           <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
             <div className="d-flex align-items-center justify-content-between mb25">
               <h4 className="title fz17 mb-0">Rental Appraisal Reports</h4>

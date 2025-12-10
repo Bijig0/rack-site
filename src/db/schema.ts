@@ -26,6 +26,8 @@ export const user = pgTable('user', {
   emailVerified: boolean('email_verified').notNull().default(false),
   image: text('image'),
   role: text('role').notNull().default('real-estate-agent').$type<UserRole>(),
+  companyName: text('company_name'),
+  companyLogoUrl: text('company_logo_url'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

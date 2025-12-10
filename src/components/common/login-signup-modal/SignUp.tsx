@@ -6,6 +6,7 @@ import { useState } from "react";
 const SignUp = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -35,7 +36,7 @@ const SignUp = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, companyName: companyName || undefined }),
       });
 
       const data = await response.json();
@@ -98,6 +99,20 @@ const SignUp = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          disabled={isLoading}
+        />
+      </div>
+
+      <div className="mb25">
+        <label className="form-label fw600 dark-color">
+          Company Name <span className="text-muted fw400">(Optional)</span>
+        </label>
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Enter your company name"
+          value={companyName}
+          onChange={(e) => setCompanyName(e.target.value)}
           disabled={isLoading}
         />
       </div>

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { getUserProperties } from "@/actions/properties";
+import { getUserProperties, getPropertyById } from "@/actions/properties";
 import PropertyList from "./PropertyList";
 
 export const metadata = {
@@ -102,6 +102,12 @@ function ErrorMessage({ error }: { error: string }) {
 async function PropertyListWithData() {
   try {
     const properties = await getUserProperties();
+
+    // Prefetch all property details in parallel (fire and forget for cache warming)
+    properties.forEach(property => {
+      void getPropertyById(property.id);
+    });
+
     return <PropertyList properties={properties} />;
   } catch (error) {
     console.error("Error loading properties:", error);

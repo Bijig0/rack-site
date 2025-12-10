@@ -12,6 +12,8 @@ export type UserProfile = {
   name: string;
   email: string;
   emailVerified: boolean;
+  companyName: string | null;
+  companyLogoUrl: string | null;
   createdAt: Date;
 };
 
@@ -38,6 +40,8 @@ export async function getUserProfile(): Promise<UserProfile | null> {
       name: user.name,
       email: user.email,
       emailVerified: user.emailVerified,
+      companyName: user.companyName,
+      companyLogoUrl: user.companyLogoUrl,
       createdAt: user.createdAt,
     })
     .from(user)
@@ -110,6 +114,52 @@ export async function updateUserEmail(newEmail: string) {
   } catch (error) {
     console.error('[updateUserEmail]', error);
     return { success: false, error: 'Failed to update email' };
+  }
+}
+
+/**
+ * Update company name
+ */
+export async function updateCompanyName(newCompanyName: string | null) {
+  const userId = await getAuthenticatedUserId();
+
+  try {
+    await db
+      .update(user)
+      .set({
+        companyName: newCompanyName?.trim() || null,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(user.id, userId));
+
+    revalidateTag('user-profile');
+    return { success: true };
+  } catch (error) {
+    console.error('[updateCompanyName]', error);
+    return { success: false, error: 'Failed to update company name' };
+  }
+}
+
+/**
+ * Update company logo URL
+ */
+export async function updateCompanyLogoUrl(logoUrl: string | null) {
+  const userId = await getAuthenticatedUserId();
+
+  try {
+    await db
+      .update(user)
+      .set({
+        companyLogoUrl: logoUrl || null,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(user.id, userId));
+
+    revalidateTag('user-profile');
+    return { success: true };
+  } catch (error) {
+    console.error('[updateCompanyLogoUrl]', error);
+    return { success: false, error: 'Failed to update company logo' };
   }
 }
 
