@@ -9,118 +9,191 @@ export const metadata = {
 
 const Login = () => {
   return (
-    <section className="our-login" style={{ minHeight: "100vh", display: "flex", alignItems: "center" }}>
-      <div className="container-fluid p-0">
-        <div className="row g-0" style={{ minHeight: "100vh" }}>
-          {/* Left Side - Feature Showcase */}
-          <div
-            className="col-lg-6 d-none d-lg-flex flex-column justify-content-center align-items-center position-relative"
-            style={{
-              background: "linear-gradient(135deg, #1f4b43 0%, #2c665c 50%, #3d8b7f 100%)",
-              padding: "60px"
-            }}
-          >
-            <div className="text-center text-white" style={{ maxWidth: "500px", zIndex: 1 }}>
-              <div className="mb-4">
-                <i className="flaticon-home-1" style={{ fontSize: "80px", opacity: 0.9 }}></i>
-              </div>
-              <h1 className="mb-4" style={{ fontSize: "2.5rem", fontWeight: 600 }}>
-                Property Appraisal Portal
-              </h1>
-              <p className="mb-5" style={{ fontSize: "1.1rem", opacity: 0.9, lineHeight: 1.7 }}>
-                Generate professional rental appraisal reports for your properties with our streamlined platform designed for real estate agents.
-              </p>
-              <div className="d-flex justify-content-center gap-4 mb-5">
-                <div className="text-center">
-                  <div style={{ fontSize: "2rem", fontWeight: 700 }}>Fast</div>
-                  <small style={{ opacity: 0.8 }}>Reports in minutes</small>
-                </div>
-                <div style={{ width: "1px", backgroundColor: "rgba(255,255,255,0.3)" }}></div>
-                <div className="text-center">
-                  <div style={{ fontSize: "2rem", fontWeight: 700 }}>Accurate</div>
-                  <small style={{ opacity: 0.8 }}>Data-driven insights</small>
-                </div>
-                <div style={{ width: "1px", backgroundColor: "rgba(255,255,255,0.3)" }}></div>
-                <div className="text-center">
-                  <div style={{ fontSize: "2rem", fontWeight: 700 }}>Professional</div>
-                  <small style={{ opacity: 0.8 }}>Branded PDFs</small>
-                </div>
-              </div>
+    <div style={{ minHeight: "100vh", display: "flex" }}>
+      {/* Left Side - Branding & Visual */}
+      <div
+        className="d-none d-lg-flex"
+        style={{
+          width: "50%",
+          background: "linear-gradient(135deg, #1a1f3c 0%, #2d3561 50%, #3d4785 100%)",
+          position: "relative",
+          overflow: "hidden",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          padding: "48px",
+        }}
+      >
+        {/* Background Pattern */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `
+              radial-gradient(circle at 20% 80%, rgba(235,103,83,0.15) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(74,88,153,0.2) 0%, transparent 50%)
+            `,
+          }}
+        />
+
+        {/* Subtle grid overlay */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)`,
+            backgroundSize: "40px 40px",
+          }}
+        />
+
+        {/* Top - Logo */}
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <Link href="/">
+            <Image
+              width={140}
+              height={44}
+              src="/images/header-logo2.svg"
+              alt="Logo"
+              style={{ filter: "brightness(0) invert(1)" }}
+            />
+          </Link>
+        </div>
+
+        {/* Center - Main Content */}
+        <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <h1 style={{ fontSize: "3rem", fontWeight: 700, color: "#fff", lineHeight: 1.2, marginBottom: 24 }}>
+            Welcome back to<br />
+            <span style={{
+              background: "linear-gradient(135deg, #eb6753 0%, #f4a261 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}>
+              Property Reports
+            </span>
+          </h1>
+          <p style={{ fontSize: "1.125rem", color: "rgba(255,255,255,0.7)", lineHeight: 1.7, maxWidth: 400 }}>
+            Access your dashboard to manage properties, generate reports, and track market insights.
+          </p>
+
+          {/* Stats */}
+          <div style={{ display: "flex", gap: 48, marginTop: 48 }}>
+            <div>
+              <div style={{ fontSize: "2rem", fontWeight: 700, color: "#fff" }}>2,400+</div>
+              <div style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.5)" }}>Active Agents</div>
             </div>
-            {/* Decorative Elements */}
-            <div
-              className="position-absolute"
-              style={{
-                bottom: "10%",
-                left: "10%",
-                width: "150px",
-                height: "150px",
-                border: "2px solid rgba(255,255,255,0.1)",
-                borderRadius: "50%"
-              }}
-            />
-            <div
-              className="position-absolute"
-              style={{
-                top: "15%",
-                right: "15%",
-                width: "80px",
-                height: "80px",
-                backgroundColor: "rgba(255,255,255,0.05)",
-                borderRadius: "50%"
-              }}
-            />
+            <div>
+              <div style={{ fontSize: "2rem", fontWeight: 700, color: "#fff" }}>50K+</div>
+              <div style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.5)" }}>Reports Generated</div>
+            </div>
+            <div>
+              <div style={{ fontSize: "2rem", fontWeight: 700, color: "#eb6753" }}>4.9</div>
+              <div style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.5)" }}>User Rating</div>
+            </div>
           </div>
+        </div>
 
-          {/* Right Side - Login Form */}
-          <div
-            className="col-lg-6 d-flex flex-column justify-content-center align-items-center"
-            style={{ backgroundColor: "#f8f9fa", padding: "40px 20px" }}
-          >
-            <div style={{ width: "100%", maxWidth: "420px" }}>
-              <div className="text-center mb-5">
-                <Link href="/">
-                  <Image
-                    width={180}
-                    height={57}
-                    className="mb-4"
-                    src="/images/header-logo2.svg"
-                    alt="logo"
-                    priority
-                  />
-                </Link>
-                <h2 className="mb-2" style={{ fontSize: "1.75rem", fontWeight: 600, color: "#1f4b43" }}>
-                  Welcome Back
-                </h2>
-                <p className="text-muted mb-0">
-                  Sign in to access your property dashboard
-                </p>
-              </div>
-
-              <div
-                className="bg-white p-4 p-md-5 rounded-4"
-                style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}
-              >
-                <SignIn />
-              </div>
-
-              <div className="text-center mt-4">
-                <p className="text-muted small mb-0">
-                  By signing in, you agree to our{" "}
-                  <Link href="/terms" className="text-decoration-underline" style={{ color: "#1f4b43" }}>
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link href="/privacy" className="text-decoration-underline" style={{ color: "#1f4b43" }}>
-                    Privacy Policy
-                  </Link>
-                </p>
+        {/* Bottom - Testimonial */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            background: "rgba(255,255,255,0.08)",
+            backdropFilter: "blur(10px)",
+            borderRadius: 16,
+            padding: 24,
+            border: "1px solid rgba(255,255,255,0.1)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #eb6753 0%, #f4a261 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ color: "#fff", fontWeight: 600, fontSize: 18 }}>SM</span>
+            </div>
+            <div>
+              <p style={{ color: "rgba(255,255,255,0.9)", fontSize: "0.9375rem", lineHeight: 1.6, marginBottom: 12, fontStyle: "italic" }}>
+                &ldquo;This platform has completely transformed how we handle rental appraisals. What used to take hours now takes minutes.&rdquo;
+              </p>
+              <div>
+                <div style={{ color: "#fff", fontWeight: 600, fontSize: "0.875rem" }}>Sarah Mitchell</div>
+                <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.8125rem" }}>Property Manager, Ray White</div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </section>
+
+      {/* Right Side - Login Form */}
+      <div
+        style={{
+          width: "50%",
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: "48px 24px",
+          background: "#fff",
+        }}
+        className="flex-grow-1"
+      >
+        <div style={{ width: "100%", maxWidth: 400 }}>
+          {/* Mobile Logo */}
+          <div className="d-lg-none text-center mb-4">
+            <Link href="/">
+              <Image
+                width={140}
+                height={44}
+                src="/images/header-logo2.svg"
+                alt="Logo"
+              />
+            </Link>
+          </div>
+
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ fontSize: "1.75rem", fontWeight: 600, color: "#1a1f3c", marginBottom: 8 }}>
+              Sign in
+            </h2>
+            <p style={{ color: "#6b7280", margin: 0 }}>
+              Don&apos;t have an account?{" "}
+              <Link href="/register" style={{ color: "#eb6753", fontWeight: 500, textDecoration: "none" }}>
+                Create one
+              </Link>
+            </p>
+          </div>
+
+          <SignIn />
+
+          <div style={{ marginTop: 32, textAlign: "center" }}>
+            <p style={{ color: "#9ca3af", fontSize: "0.8125rem", margin: 0 }}>
+              By signing in, you agree to our{" "}
+              <Link href="/terms" style={{ color: "#6b7280", textDecoration: "underline" }}>
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" style={{ color: "#6b7280", textDecoration: "underline" }}>
+                Privacy Policy
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

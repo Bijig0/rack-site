@@ -185,6 +185,7 @@ export default function HeroSection() {
                   boxShadow: "0 4px 20px rgba(235,103,83,0.35)",
                 }}
               >
+                Property Reports
                 <i
                   className="fas fa-file-alt"
                   style={{
@@ -192,7 +193,6 @@ export default function HeroSection() {
                     opacity: 0.9,
                   }}
                 />
-                Property Reports
               </span>
               <br />
               <span
