@@ -66,6 +66,24 @@ function ReportsSkeleton() {
   );
 }
 
+// Loading skeleton for company branding card
+function BrandingSkeleton() {
+  return (
+    <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
+      <div className="d-flex align-items-center justify-content-between mb20">
+        <div className="skeleton-box" style={{ width: 140, height: 20 }}></div>
+      </div>
+      <div className="d-flex align-items-center gap-3">
+        <div className="skeleton-box flex-shrink-0" style={{ width: 60, height: 60, borderRadius: 8 }}></div>
+        <div className="flex-grow-1">
+          <div className="skeleton-box mb-2" style={{ width: "70%", height: 16 }}></div>
+          <div className="skeleton-box" style={{ width: "50%", height: 12 }}></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Stats component with async data fetching
 async function StatsBlock() {
   const propertyCount = await getUserPropertyCount();
@@ -193,7 +211,7 @@ async function CompanyBrandingCard() {
         <div className="d-flex align-items-center justify-content-between mb20">
           <h4 className="title fz17 mb-0">Company Branding</h4>
           <Link
-            href="/dashboard/profile"
+            href="/dashboard/branding"
             className="fz12 text-decoration-none"
             style={{ color: "#666" }}
           >
@@ -283,7 +301,7 @@ async function CompanyBrandingCard() {
             Personalize your appraisal reports with your company logo and name for a professional touch.
           </p>
           <Link
-            href="/dashboard/profile"
+            href="/dashboard/branding"
             className="ud-btn btn-white btn-sm"
             style={{ padding: "8px 16px", fontSize: 13 }}
           >
@@ -427,7 +445,7 @@ export default function DashboardPage() {
 
         <div className="col-xl-4">
           {/* Company Branding Card */}
-          <Suspense fallback={null}>
+          <Suspense fallback={<BrandingSkeleton />}>
             <CompanyBrandingCard />
           </Suspense>
 
