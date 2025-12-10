@@ -98,10 +98,6 @@ export default async function PropertyDetailPage({
   }
 
   const latestAppraisal = appraisals[0];
-  const reportData = latestAppraisal?.data as {
-    coverPageData?: { reportDate?: string };
-    propertyInfo?: { estimatedValue?: { low?: number; high?: number } };
-  } | null;
 
   return (
     <>
@@ -353,32 +349,6 @@ export default async function PropertyDetailPage({
               </div>
             )}
           </div>
-
-          {/* Report Data Preview */}
-          {reportData && (
-            <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-              <h4 className="title fz17 mb30">Latest Report Data</h4>
-              <div className="row">
-                {reportData.coverPageData && (
-                  <div className="col-md-6 mb20">
-                    <h6>Report Date</h6>
-                    <p>{reportData.coverPageData.reportDate}</p>
-                  </div>
-                )}
-                {reportData.propertyInfo?.estimatedValue && (
-                  <div className="col-md-6 mb20">
-                    <h6>Estimated Value</h6>
-                    <p>
-                      {reportData.propertyInfo.estimatedValue.low &&
-                      reportData.propertyInfo.estimatedValue.high
-                        ? `$${reportData.propertyInfo.estimatedValue.low.toLocaleString()} - $${reportData.propertyInfo.estimatedValue.high.toLocaleString()}`
-                        : "—"}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Checklist Management */}
           <ChecklistManagement

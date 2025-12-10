@@ -181,11 +181,12 @@ const DashboardHeader = () => {
                                       className="dropdown-item"
                                       href={item.href}
                                       style={isActive ? {
-                                        backgroundColor: "#f0f0f0",
+                                        backgroundColor: "#222",
+                                        color: "#fff",
                                         borderRadius: 8,
                                       } : undefined}
                                     >
-                                      <i className={`${item.icon} mr10`} />
+                                      <i className={`${item.icon} mr10`} style={isActive ? { color: "#fff" } : undefined} />
                                       {item.text}
                                     </Link>
                                   );

@@ -142,3 +142,14 @@
 .sidebar-collapsed .dashboard_sidebar_list .sidebar-divider {
   opacity: 1;
 }
+
+/* My Account dropdown - black/white hover style */
+.user_setting_content .dropdown-item:hover {
+  background-color: #222 !important;
+  color: #fff !important;
+  border-radius: 8px;
+}
+
+.user_setting_content .dropdown-item:hover i {
+  color: #fff !important;
+}

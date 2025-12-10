@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { getUserAppraisalReports } from "@/actions/appraisals";
+import ReportList from "./ReportList";
 
 export const metadata = {
   title: "Appraisal Reports | Dashboard",
@@ -31,145 +32,36 @@ function CardSkeleton() {
   );
 }
 
-function CardsSkeleton() {
+function PageSkeleton() {
   return (
     <>
-      {[1, 2, 3, 4, 5, 6].map((i) => (
-        <CardSkeleton key={i} />
-      ))}
+      {/* Header skeleton */}
+      <div className="row align-items-center pb30">
+        <div className="col-lg-6">
+          <div className="dashboard_title_area">
+            <div className="skeleton-box mb-2" style={{ width: 200, height: 32 }}></div>
+            <div className="skeleton-box" style={{ width: 320, height: 16 }}></div>
+          </div>
+        </div>
+        <div className="col-lg-6">
+          <div className="d-flex flex-wrap justify-content-lg-end gap-3">
+            <div className="skeleton-box" style={{ width: 220, height: 44, borderRadius: 8 }}></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Cards skeleton */}
+      <div className="row">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <CardSkeleton key={i} />
+        ))}
+      </div>
     </>
   );
 }
 
-// Report card component
-function ReportCard({ report }: { report: Awaited<ReturnType<typeof getUserAppraisalReports>>[0] }) {
-  const reportDate = new Date(report.createdAt).toLocaleDateString("en-AU", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-
-  return (
-    <div className="col-sm-6 col-xl-4">
-      <div
-        className="ps-widget bgc-white bdrs12 p30 mb30 overflow-hidden position-relative"
-        style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}
-      >
-        {/* Header with address and download button */}
-        <div className="d-flex justify-content-between align-items-start mb20">
-          <Link
-            href={`/dashboard/my-properties/${report.propertyId}`}
-            className="text-decoration-none flex-grow-1"
-          >
-            <h5
-              className="fw600 mb-0"
-              style={{
-                color: "#222",
-                fontSize: 16,
-                lineHeight: 1.4,
-                paddingRight: 10,
-              }}
-            >
-              {report.addressCommonName}
-            </h5>
-          </Link>
-
-          {report.pdfUrl ? (
-            <a
-              href={report.pdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ud-btn btn-white2 btn-sm fz12 fw600 flex-shrink-0"
-              style={{ padding: "8px 14px" }}
-            >
-              <i className="fas fa-download me-2" style={{ fontSize: 11 }} />
-              Download
-            </a>
-          ) : (
-            <span
-              className="badge flex-shrink-0 fz12"
-              style={{
-                backgroundColor: report.status === "processing" ? "#e3f2fd" : "#fff8e1",
-                color: report.status === "processing" ? "#1565c0" : "#f57c00",
-                padding: "8px 12px",
-              }}
-            >
-              {report.status === "processing" ? "Processing" : "Pending"}
-            </span>
-          )}
-        </div>
-
-        {/* Property Details label */}
-        <div className="mb10 fz13 fw500" style={{ color: "#888" }}>
-          Property Details
-        </div>
-
-        {/* Property Info */}
-        <div className="d-flex flex-wrap gap-4 mb15 fz14">
-          {report.bedroomCount && (
-            <div>
-              <span style={{ color: "#888" }}>Bedrooms</span>
-              <span className="ms-2 fw500" style={{ color: "#222" }}>{report.bedroomCount}</span>
-            </div>
-          )}
-          {report.bathroomCount && (
-            <div>
-              <span style={{ color: "#888" }}>Bathrooms</span>
-              <span className="ms-2 fw500" style={{ color: "#222" }}>{report.bathroomCount}</span>
-            </div>
-          )}
-          {report.propertyType && (
-            <div>
-              <span style={{ color: "#888" }}>Property Type</span>
-              <span className="ms-2 fw500" style={{ color: "#222" }}>{report.propertyType}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Report Creation Date */}
-        <div className="fz14">
-          <span style={{ color: "#888" }}>Report Creation Date</span>
-          <span className="ms-3" style={{ color: "#222" }}>
-            {reportDate}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Report cards grid
-async function ReportCards() {
-  const reports = await getUserAppraisalReports();
-
-  if (reports.length === 0) {
-    return (
-      <div className="col-12">
-        <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 text-center">
-          <i className="fas fa-file-alt fz60 text-muted mb-4 d-block" />
-          <h4 className="mb-3">No appraisal reports yet</h4>
-          <p className="text-muted mb-4">
-            Generate your first appraisal report from any property.
-          </p>
-          <Link href="/dashboard/my-properties" className="ud-btn btn-thm">
-            <i className="fal fa-home me-2" />
-            View Properties
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {reports.map((report) => (
-        <ReportCard key={report.id} report={report} />
-      ))}
-    </>
-  );
-}
-
-export default function AppraisalReportsPage() {
+// Error component
+function ErrorMessage({ error }: { error: string }) {
   return (
     <>
       {/* Header */}
@@ -180,37 +72,40 @@ export default function AppraisalReportsPage() {
             <p className="text">View and download your rental appraisal reports</p>
           </div>
         </div>
-        <div className="col-lg-6">
-          <div className="d-flex flex-wrap justify-content-lg-end gap-3">
-            {/* Search input */}
-            <div className="position-relative">
-              <i
-                className="fas fa-search position-absolute"
-                style={{ left: 14, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 14 }}
-              />
-              <input
-                type="text"
-                placeholder="Search..."
-                className="form-control"
-                style={{
-                  paddingLeft: 40,
-                  borderRadius: 8,
-                  border: "1px solid #e0e0e0",
-                  width: 200,
-                  fontSize: 14,
-                }}
-              />
-            </div>
+      </div>
+
+      <div className="row">
+        <div className="col-12">
+          <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 text-center">
+            <i className="fas fa-exclamation-triangle fz60 text-warning mb-4 d-block" />
+            <h4 className="mb-3">Unable to load reports</h4>
+            <p className="text-muted mb-4">{error}</p>
+            <Link href="/dashboard" className="ud-btn btn-thm">
+              <i className="fal fa-arrow-left me-2" />
+              Back to Dashboard
+            </Link>
           </div>
         </div>
       </div>
-
-      {/* Report Cards Grid */}
-      <div className="row">
-        <Suspense fallback={<CardsSkeleton />}>
-          <ReportCards />
-        </Suspense>
-      </div>
     </>
+  );
+}
+
+// Report list with data
+async function ReportListWithData() {
+  try {
+    const reports = await getUserAppraisalReports();
+    return <ReportList reports={reports} />;
+  } catch (error) {
+    console.error("Error loading reports:", error);
+    return <ErrorMessage error="Please try refreshing the page." />;
+  }
+}
+
+export default function AppraisalReportsPage() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <ReportListWithData />
+    </Suspense>
   );
 }
