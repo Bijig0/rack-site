@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { getUserProperties, type PropertyWithAppraisal } from "@/actions/properties";
 
 export const metadata = {
@@ -16,6 +17,7 @@ function CardSkeleton() {
         className="ps-widget bgc-white bdrs12 p30 mb30 overflow-hidden position-relative"
         style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}
       >
+        <div className="skeleton-box mb20" style={{ width: "100%", height: 140, borderRadius: 8 }}></div>
         <div className="skeleton-box mb-3" style={{ width: "70%", height: 20 }}></div>
         <div className="d-flex gap-3 mb-3">
           <div className="skeleton-box" style={{ width: 100, height: 16 }}></div>
@@ -55,17 +57,16 @@ function PropertyCard({ property }: { property: PropertyWithAppraisal }) {
         style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}
       >
         {/* Three dots menu */}
-        <div className="dropdown position-absolute" style={{ top: 20, right: 20 }}>
+        <div className="dropdown position-absolute" style={{ top: 16, right: 16, zIndex: 10 }}>
           <button
-            className="btn p-0"
+            className="btn p-0 three-dots-menu"
             type="button"
             data-bs-toggle="dropdown"
             aria-expanded="false"
-            style={{ color: "#888", fontSize: 18 }}
           >
             <i className="fas fa-ellipsis-v" />
           </button>
-          <ul className="dropdown-menu dropdown-menu-end">
+          <ul className="dropdown-menu dropdown-menu-end" style={{ border: "1px solid #e0e0e0", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
             <li>
               <Link className="dropdown-item fz14" href={`/dashboard/my-properties/${property.id}`}>
                 <i className="fas fa-eye me-2" /> View Details
@@ -84,18 +85,43 @@ function PropertyCard({ property }: { property: PropertyWithAppraisal }) {
           </ul>
         </div>
 
+        {/* Property Thumbnail */}
+        <Link href={`/dashboard/my-properties/${property.id}`} className="d-block mb20">
+          {property.mainImageUrl ? (
+            <Image
+              src={property.mainImageUrl}
+              alt={property.addressCommonName}
+              width={400}
+              height={140}
+              className="property-thumbnail"
+              style={{ objectFit: "cover" }}
+            />
+          ) : (
+            <div
+              className="d-flex align-items-center justify-content-center"
+              style={{
+                width: "100%",
+                height: 140,
+                borderRadius: 8,
+                backgroundColor: "#f5f5f5",
+              }}
+            >
+              <i className="flaticon-home" style={{ fontSize: 40, color: "#ccc" }} />
+            </div>
+          )}
+        </Link>
+
         {/* Address */}
         <Link
           href={`/dashboard/my-properties/${property.id}`}
           className="text-decoration-none"
         >
           <h5
-            className="fw600 mb20"
+            className="fw600 mb15"
             style={{
               color: "#222",
               fontSize: 16,
               lineHeight: 1.4,
-              paddingRight: 30,
             }}
           >
             {property.addressCommonName}

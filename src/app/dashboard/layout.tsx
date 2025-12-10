@@ -3,6 +3,7 @@ import MobileMenu from "@/components/common/mobile-menu";
 import Footer from "@/components/property/dashboard/Footer";
 import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
 import DboardMobileNavigation from "@/components/property/dashboard/DboardMobileNavigation";
+import DashboardMainContent from "@/components/property/dashboard/DashboardMainContent";
 import { preloadProperties } from "@/lib/preload";
 import { PropertyJobsProvider } from "@/context/PropertyJobsContext";
 import { SidebarProvider } from "@/context/SidebarContext";
@@ -25,19 +26,17 @@ export default function DashboardLayout({
           <div className="dashboard dashboard_wrapper pr30 pr0-xl">
             <SidebarDashboard />
 
-            <div className="dashboard__main pl0-md">
-              <div className="dashboard__content bgc-f7">
-                <div className="row pb40">
-                  <div className="col-lg-12">
-                    <DboardMobileNavigation />
-                  </div>
+            <DashboardMainContent>
+              <div className="row pb40">
+                <div className="col-lg-12">
+                  <DboardMobileNavigation />
                 </div>
-
-                {children}
-
-                <Footer />
               </div>
-            </div>
+
+              {children}
+
+              <Footer />
+            </DashboardMainContent>
           </div>
         </div>
       </SidebarProvider>

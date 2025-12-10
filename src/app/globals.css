@@ -31,3 +31,92 @@
   background-color: #f8f9fa !important;
   transition: background-color 0.2s ease;
 }
+
+/* Three dots menu hover effect */
+.three-dots-menu {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #eb6753;
+  font-size: 14px;
+  transition: all 0.1s ease;
+  background-color: #fff;
+  border: 1px solid #eb6753;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+}
+
+.three-dots-menu:hover {
+  background-color: #eb6753;
+  border-color: #eb6753;
+  color: #fff;
+}
+
+/* Property thumbnail */
+.property-thumbnail {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 8px;
+  background-color: #f5f5f5;
+}
+
+/* ============================================
+   Sidebar Collapsed State - Icon Styling
+   ============================================ */
+
+/* When sidebar is collapsed, style the links as icon buttons */
+.sidebar-collapsed .sidebar_list_item a {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0 !important;
+  margin: 4px auto;
+  border-radius: 12px !important;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.sidebar-collapsed .sidebar_list_item a:hover {
+  background-color: #f0f0f0;
+}
+
+.sidebar-collapsed .sidebar_list_item a.-is-active {
+  background-color: #222 !important;
+  border-radius: 12px !important;
+}
+
+.sidebar-collapsed .sidebar_list_item a.-is-active i {
+  color: #fff !important;
+}
+
+/* Force all sidebar icons to be dark/visible and perfectly centered */
+.sidebar-collapsed .sidebar_list_item a i {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 18px;
+  color: #333 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  line-height: 1 !important;
+  height: auto !important;
+  width: auto !important;
+}
+
+.sidebar-collapsed .sidebar_list_item a i::before {
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #333 !important;
+  line-height: 1 !important;
+}
+
+/* Override for active state - white icons */
+.sidebar-collapsed .sidebar_list_item a.-is-active i,
+.sidebar-collapsed .sidebar_list_item a.-is-active i::before {
+  color: #fff !important;
+}

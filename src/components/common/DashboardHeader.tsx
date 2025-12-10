@@ -9,7 +9,7 @@ import { useSidebar } from "@/context/SidebarContext";
 
 const DashboardHeader = () => {
   const pathname = usePathname();
-  const { toggleSidebar } = useSidebar();
+  const { isCollapsed, toggleSidebar } = useSidebar();
 
   const handleLogout = async () => {
     try {
@@ -75,13 +75,21 @@ const DashboardHeader = () => {
             <div className="row align-items-center justify-content-between">
               <div className="col-6 col-lg-auto">
                 <div className="text-center text-lg-start d-flex align-items-center">
-                  <div className="dashboard_header_logo position-relative me-2 me-xl-5">
+                  <div
+                    className="dashboard_header_logo position-relative me-2 me-xl-5"
+                    style={{
+                      width: isCollapsed ? 40 : undefined,
+                      overflow: "hidden",
+                      transition: "width 0.3s ease",
+                    }}
+                  >
                     <Link className="logo" href="/">
                       <Image
                         width={138}
                         height={44}
                         src="/images/header-logo2.svg"
                         alt="Header Logo"
+                        style={{ minWidth: 138 }}
                       />
                     </Link>
                   </div>

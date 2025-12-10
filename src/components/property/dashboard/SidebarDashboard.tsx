@@ -46,7 +46,7 @@ const SidebarDashboard = () => {
         },
         {
           href: "/dashboard/add-property",
-          icon: "flaticon-add-new",
+          icon: "fas fa-plus-circle",
           text: "Add Property",
         },
         {
@@ -77,7 +77,7 @@ const SidebarDashboard = () => {
 
   return (
     <div
-      className="dashboard__sidebar d-none d-lg-block"
+      className={`dashboard__sidebar d-none d-lg-block ${isCollapsed ? "sidebar-collapsed" : ""}`}
       style={{
         width: isCollapsed ? 80 : undefined,
         minWidth: isCollapsed ? 80 : undefined,
@@ -103,7 +103,13 @@ const SidebarDashboard = () => {
               </p>
             )}
             {isCollapsed && sectionIndex > 0 && (
-              <div style={{ height: 20 }} />
+              <div
+                style={{
+                  height: 1,
+                  backgroundColor: "#e0e0e0",
+                  margin: "12px 8px",
+                }}
+              />
             )}
             {section.items.map((item, itemIndex) => (
               <div key={itemIndex} className="sidebar_list_item">
@@ -112,17 +118,8 @@ const SidebarDashboard = () => {
                   className={`items-center ${isActive(item.href) ? "-is-active" : ""}`}
                   prefetch={true}
                   title={isCollapsed ? item.text : undefined}
-                  style={{
-                    justifyContent: isCollapsed ? "center" : undefined,
-                    padding: isCollapsed ? "15px 10px" : undefined,
-                  }}
                 >
-                  <i
-                    className={`${item.icon} ${isCollapsed ? "" : "mr15"}`}
-                    style={{
-                      fontSize: isCollapsed ? 20 : undefined,
-                    }}
-                  />
+                  <i className={`${item.icon} ${isCollapsed ? "" : "mr15"}`} />
                   {!isCollapsed && item.text}
                 </Link>
               </div>
@@ -131,24 +128,24 @@ const SidebarDashboard = () => {
         ))}
 
         {/* Logout button */}
-        <div className="sidebar_list_item" style={{ marginTop: isCollapsed ? 20 : undefined }}>
+        {isCollapsed && (
+          <div
+            style={{
+              height: 1,
+              backgroundColor: "#e0e0e0",
+              margin: "12px 8px",
+            }}
+          />
+        )}
+        <div className="sidebar_list_item" style={{ marginTop: isCollapsed ? 0 : undefined }}>
           <a
             href="#"
             onClick={handleLogout}
             className="items-center"
             title={isCollapsed ? "Logout" : undefined}
-            style={{
-              cursor: "pointer",
-              justifyContent: isCollapsed ? "center" : undefined,
-              padding: isCollapsed ? "15px 10px" : undefined,
-            }}
+            style={{ cursor: "pointer" }}
           >
-            <i
-              className={`flaticon-logout ${isCollapsed ? "" : "mr15"}`}
-              style={{
-                fontSize: isCollapsed ? 20 : undefined,
-              }}
-            />
+            <i className={`flaticon-logout ${isCollapsed ? "" : "mr15"}`} />
             {!isCollapsed && "Logout"}
           </a>
         </div>
