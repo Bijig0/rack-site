@@ -29,7 +29,6 @@
 /* Hover effect for property cards */
 .hover-bg-light:hover {
   background-color: #f8f9fa !important;
-  transition: background-color 0.2s ease;
 }
 
 /* Three dots menu hover effect */
@@ -42,7 +41,7 @@
   justify-content: center;
   color: #eb6753;
   font-size: 14px;
-  transition: all 0.1s ease;
+  transition: none;
   background-color: #fff;
   border: 1px solid #eb6753;
   box-shadow: 0 2px 4px rgba(0,0,0,0.06);
@@ -52,6 +51,15 @@
   background-color: #eb6753;
   border-color: #eb6753;
   color: #fff;
+}
+
+/* Filled orange when dropdown is open */
+.three-dots-menu:focus,
+.three-dots-menu[aria-expanded="true"] {
+  background-color: #eb6753;
+  border-color: #eb6753;
+  color: #fff;
+  outline: none;
 }
 
 /* Property thumbnail */
@@ -78,7 +86,6 @@
   margin: 4px auto;
   border-radius: 12px !important;
   background-color: transparent;
-  transition: background-color 0.15s ease;
 }
 
 .sidebar-collapsed .sidebar_list_item a:hover {
