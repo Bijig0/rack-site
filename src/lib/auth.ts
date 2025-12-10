@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-min-32-chars-long!'
@@ -29,7 +30,10 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
   }
 }
 
-export async function getSession(): Promise<TokenPayload | null> {
+/**
+ * Internal session fetch - wrapped by cache() below
+ */
+async function fetchSession(): Promise<TokenPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
 
@@ -40,6 +44,11 @@ export async function getSession(): Promise<TokenPayload | null> {
   console.log('[getSession] Token valid:', !!result);
   return result;
 }
+
+/**
+ * Get the current session - cached per request to avoid repeated JWT verification
+ */
+export const getSession = cache(fetchSession);
 
 export async function setAuthCookie(token: string): Promise<void> {
   const cookieStore = await cookies();

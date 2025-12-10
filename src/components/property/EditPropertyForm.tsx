@@ -3,14 +3,14 @@
 import { useState, useTransition, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import { updateProperty, type UpdatePropertyInput } from "@/actions/properties";
-import ImagePicker from "./ImagePicker";
+import MultiImageGallery, { type PropertyImageData } from "./MultiImageGallery";
 
 interface PropertyData {
   bedroomCount: number | null;
   bathroomCount: number | null;
   propertyType: string | null;
   landAreaSqm: string | null;
-  mainImageUrl: string | null;
+  images: PropertyImageData[];
 }
 
 interface EditPropertyFormProps {
@@ -54,8 +54,8 @@ export default function EditPropertyForm({
   const [landAreaSqm, setLandAreaSqm] = useState<string>(
     initialData.landAreaSqm ?? ""
   );
-  const [mainImageUrl, setMainImageUrl] = useState<string | null>(
-    initialData.mainImageUrl
+  const [images, setImages] = useState<PropertyImageData[]>(
+    initialData.images || []
   );
 
   // Track if form has changes
@@ -66,21 +66,30 @@ export default function EditPropertyForm({
       bathroomCount !== (initialData.bathroomCount?.toString() ?? "");
     const typeChanged = propertyType !== (initialData.propertyType ?? "");
     const areaChanged = landAreaSqm !== (initialData.landAreaSqm ?? "");
-    const imageChanged = mainImageUrl !== initialData.mainImageUrl;
+
+    // Check if images have changed
+    const initialImages = initialData.images || [];
+    const imagesChanged =
+      images.length !== initialImages.length ||
+      images.some((img, i) =>
+        img.url !== initialImages[i]?.url ||
+        img.type !== initialImages[i]?.type ||
+        img.sortOrder !== initialImages[i]?.sortOrder
+      );
 
     return (
       bedroomChanged ||
       bathroomChanged ||
       typeChanged ||
       areaChanged ||
-      imageChanged
+      imagesChanged
     );
   }, [
     bedroomCount,
     bathroomCount,
     propertyType,
     landAreaSqm,
-    mainImageUrl,
+    images,
     initialData,
   ]);
 
@@ -103,7 +112,7 @@ export default function EditPropertyForm({
         bathroomCount: bathroomCount ? parseInt(bathroomCount, 10) : null,
         propertyType: propertyType || null,
         landAreaSqm: landAreaSqm || null,
-        mainImageUrl: mainImageUrl || null,
+        images: images,
       };
 
       const result = await updateProperty(propertyId, input);
@@ -123,14 +132,14 @@ export default function EditPropertyForm({
       <h4 className="title fz17 mb30">Property Details</h4>
 
       <div className="row">
-        {/* Property Image */}
+        {/* Property Images */}
         <div className="col-12 mb30">
-          <label className="form-label fw600 mb15">Property Image</label>
-          <ImagePicker
-            value={mainImageUrl}
-            onChange={setMainImageUrl}
-            folder="properties"
+          <MultiImageGallery
+            images={images}
+            onChange={setImages}
+            folder="property_images"
             disabled={isPending}
+            maxImages={10}
           />
         </div>
 

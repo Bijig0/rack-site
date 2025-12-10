@@ -7,7 +7,6 @@ export const metadata = {
   title: "My Properties | Dashboard",
 };
 
-export const dynamic = 'force-dynamic';
 
 // Property card skeleton
 function CardSkeleton() {

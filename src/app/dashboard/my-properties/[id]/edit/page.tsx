@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { getPropertyById } from "@/actions/properties";
 import EditPropertyClient from "./EditPropertyClient";
 
-export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -33,12 +32,20 @@ export default async function EditPropertyPage({
     notFound();
   }
 
+  // Transform images to the format expected by the form
+  const images = (data.images || []).map((img) => ({
+    id: img.id,
+    url: img.url,
+    type: img.type as "main" | "gallery" | "floor_plan" | "streetview",
+    sortOrder: img.sortOrder,
+  }));
+
   const initialData = {
     bedroomCount: data.bedroomCount,
     bathroomCount: data.bathroomCount,
     propertyType: data.propertyType,
     landAreaSqm: data.landAreaSqm,
-    mainImageUrl: data.mainImageUrl,
+    images,
   };
 
   return (

@@ -33,6 +33,7 @@ function ReportCard({ report }: { report: Report }) {
           <Link
             href={`/dashboard/my-properties/${report.propertyId}`}
             className="text-decoration-none flex-grow-1"
+            prefetch={true}
           >
             <h5
               className="fw600 mb-0"
@@ -185,7 +186,7 @@ export default function ReportList({ reports }: ReportListProps) {
                   <p className="text-muted mb-4">
                     Generate your first appraisal report from any property.
                   </p>
-                  <Link href="/dashboard/my-properties" className="ud-btn btn-thm">
+                  <Link href="/dashboard/my-properties" className="ud-btn btn-thm" prefetch={true}>
                     <i className="fal fa-home me-2" />
                     View Properties
                   </Link>

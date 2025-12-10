@@ -1,5 +1,6 @@
 import { getUserProperties, getUserPropertyCount, getPropertyById, getAllPropertyIds } from '@/actions/properties';
 import { getUserAppraisalReports } from '@/actions/appraisals';
+import { getUserProfile } from '@/actions/user';
 
 /**
  * Preload properties data - call this early to warm the cache
@@ -42,10 +43,11 @@ export async function preloadAllPropertyDetails() {
 }
 
 /**
- * Preload dashboard data - properties and appraisal reports
+ * Preload dashboard data - properties, appraisal reports, and user profile
  */
 export function preloadDashboardData() {
   void getUserProperties();
   void getUserPropertyCount();
   void getUserAppraisalReports();
+  void getUserProfile();
 }

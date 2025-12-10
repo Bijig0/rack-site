@@ -8,8 +8,6 @@ import DeletePropertyButton from "@/components/property/DeletePropertyButton";
 import ChecklistManagement from "@/components/property/ChecklistManagement";
 import PropertyTags from "@/components/property/PropertyTags";
 
-// Force dynamic rendering to ensure auth cookies are available
-export const dynamic = 'force-dynamic';
 
 // Generate metadata
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -79,7 +77,14 @@ export default async function PropertyDetailPage({
     notFound();
   }
 
-  const { appraisals, ...property } = data;
+  const { appraisals, images, ...property } = data;
+
+  // Organize images by type
+  const mainImage = images?.find((img) => img.type === "main");
+  const galleryImages = images?.filter((img) => img.type === "gallery") || [];
+  const floorPlanImages = images?.filter((img) => img.type === "floor_plan") || [];
+  const streetviewImages = images?.filter((img) => img.type === "streetview") || [];
+  const additionalImages = [...galleryImages, ...floorPlanImages, ...streetviewImages];
 
   // Fetch checklists - wrap in try/catch in case tables don't exist yet
   let initialChecklists = [];
@@ -121,6 +126,7 @@ export default async function PropertyDetailPage({
             <Link
               href={`/dashboard/my-properties/${id}/edit`}
               className="ud-btn btn-dark"
+              prefetch={true}
             >
               <i className="fas fa-edit me-2"></i>Edit Details
             </Link>
@@ -201,6 +207,7 @@ export default async function PropertyDetailPage({
                 <Link
                   href={`/dashboard/my-properties/${id}/generate-report`}
                   className="ud-btn btn-dark"
+                  prefetch={true}
                 >
                   <i className="fas fa-plus me-2"></i>New Report
                 </Link>
@@ -210,20 +217,20 @@ export default async function PropertyDetailPage({
         </div>
       </div>
 
-      {/* Property Image */}
+      {/* Property Images */}
       <div className="row mb30">
         <div className="col-12">
           <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 overflow-hidden position-relative">
             <div className="row">
               <div className="col-md-8">
-                {property.mainImageUrl ? (
+                {mainImage ? (
                   <Image
-                    src={property.mainImageUrl}
+                    src={mainImage.url}
                     alt={property.addressCommonName}
                     width={800}
                     height={500}
                     className="w-100 bdrs12"
-                    style={{ objectFit: "cover" }}
+                    style={{ objectFit: "cover", maxHeight: 500 }}
                     priority
                   />
                 ) : (
@@ -237,14 +244,87 @@ export default async function PropertyDetailPage({
               </div>
               <div className="col-md-4">
                 <div className="row g-2">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="col-6">
-                      <PlaceholderImage size="small" />
-                    </div>
-                  ))}
+                  {additionalImages.length > 0 ? (
+                    additionalImages.slice(0, 4).map((img, index) => (
+                      <div key={img.id || index} className="col-6">
+                        <div className="position-relative">
+                          <Image
+                            src={img.url}
+                            alt={`Property photo ${index + 1}`}
+                            width={200}
+                            height={150}
+                            className="bdrs8 w-100"
+                            style={{ objectFit: "cover", height: 120 }}
+                          />
+                          {/* Type badge */}
+                          <span
+                            className="position-absolute badge"
+                            style={{
+                              top: 5,
+                              left: 5,
+                              fontSize: 9,
+                              backgroundColor:
+                                img.type === "floor_plan"
+                                  ? "#9333ea"
+                                  : img.type === "streetview"
+                                  ? "#0891b2"
+                                  : "#6b7280",
+                              color: "#fff",
+                            }}
+                          >
+                            {img.type === "floor_plan"
+                              ? "Floor Plan"
+                              : img.type === "streetview"
+                              ? "Street View"
+                              : "Gallery"}
+                          </span>
+                          {/* Show +N indicator on last image if there are more */}
+                          {index === 3 && additionalImages.length > 4 && (
+                            <div
+                              className="position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center"
+                              style={{
+                                background: "rgba(0,0,0,0.5)",
+                                borderRadius: 8,
+                              }}
+                            >
+                              <span className="text-white fw600 fz18">
+                                +{additionalImages.length - 4}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    // Show placeholders if no additional images
+                    [1, 2, 3, 4].map((i) => (
+                      <div key={i} className="col-6">
+                        <PlaceholderImage size="small" />
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
+            {/* Image count info */}
+            {images && images.length > 0 && (
+              <div className="mt-3 text-muted fz13">
+                <i className="fas fa-images me-1" />
+                {images.length} photo{images.length !== 1 ? "s" : ""} uploaded
+                {floorPlanImages.length > 0 && (
+                  <span className="ms-2">
+                    • {floorPlanImages.length} floor plan
+                    {floorPlanImages.length !== 1 ? "s" : ""}
+                  </span>
+                )}
+                {streetviewImages.length > 0 && (
+                  <span className="ms-2">
+                    • {streetviewImages.length} street view
+                    {streetviewImages.length !== 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

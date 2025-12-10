@@ -351,12 +351,19 @@ export async function createProperty(input: CreatePropertyInput): Promise<{ succ
 /**
  * Update property details
  */
+export interface PropertyImageInput {
+  id?: string;
+  url: string;
+  type: 'main' | 'gallery' | 'floor_plan' | 'streetview';
+  sortOrder: number;
+}
+
 export interface UpdatePropertyInput {
   bedroomCount: number | null;
   bathroomCount: number | null;
   propertyType: string | null;
   landAreaSqm: string | null;
-  mainImageUrl: string | null;
+  images: PropertyImageInput[];
 }
 
 export async function updateProperty(
@@ -395,26 +402,23 @@ export async function updateProperty(
       })
       .where(eq(property.id, propertyId));
 
-    // Handle main image
-    if (input.mainImageUrl !== null) {
-      // Delete existing main image
-      await db
-        .delete(propertyImage)
-        .where(and(
-          eq(propertyImage.propertyId, propertyId),
-          eq(propertyImage.type, 'main')
-        ));
+    // Handle images - delete all existing and re-insert
+    // This is simpler than trying to diff and update individual images
+    await db
+      .delete(propertyImage)
+      .where(eq(propertyImage.propertyId, propertyId));
 
-      // Insert new main image if URL provided
-      if (input.mainImageUrl) {
-        await db.insert(propertyImage).values({
-          id: uuidv4(),
-          propertyId,
-          url: input.mainImageUrl,
-          type: 'main',
-          sortOrder: 0,
-        });
-      }
+    // Insert all images
+    if (input.images && input.images.length > 0) {
+      const imageValues = input.images.map((img) => ({
+        id: img.id || uuidv4(),
+        propertyId,
+        url: img.url,
+        type: img.type,
+        sortOrder: img.sortOrder,
+      }));
+
+      await db.insert(propertyImage).values(imageValues);
     }
 
     // Revalidate the cache

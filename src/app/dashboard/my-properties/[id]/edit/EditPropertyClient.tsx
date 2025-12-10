@@ -3,13 +3,14 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import EditPropertyForm from "@/components/property/EditPropertyForm";
+import type { PropertyImageData } from "@/components/property/MultiImageGallery";
 
 interface PropertyData {
   bedroomCount: number | null;
   bathroomCount: number | null;
   propertyType: string | null;
   landAreaSqm: string | null;
-  mainImageUrl: string | null;
+  images: PropertyImageData[];
 }
 
 interface EditPropertyClientProps {
