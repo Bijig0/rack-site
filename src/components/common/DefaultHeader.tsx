@@ -31,6 +31,13 @@ const DefaultHeader = () => {
         className={`header-nav nav-homepage-style light-header menu-home4 main-menu ${
           navbar ? "sticky slideInDown animated" : ""
         }`}
+        style={{
+          position: navbar ? "fixed" : "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 999,
+        }}
       >
         <nav className="posr">
           <div className="container posr menu_bdrt1">

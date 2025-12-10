@@ -1,8 +1,9 @@
+import DefaultHeader from "@/components/common/DefaultHeader";
+import MobileMenu from "@/components/common/mobile-menu";
+import Footer from "@/components/home/home-v4/footer";
+import HeroSection from "@/components/home/HeroSection";
 import Image from "next/image";
 import Link from "next/link";
-import MobileMenu from "@/components/common/mobile-menu";
-import DefaultHeader from "@/components/common/DefaultHeader";
-import Footer from "@/components/home/home-v4/footer";
 
 export const metadata = {
   title: "Rental Appraisal Report Generator",
@@ -175,68 +176,7 @@ const Home_V4 = () => {
       {/* End Mobile Nav */}
 
       {/* Hero Section */}
-      <section
-        className="home-banner-style4 p0"
-        style={{
-          backgroundImage: "url(/images/home/home-4.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          position: "relative",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background:
-              "linear-gradient(135deg, rgba(26, 31, 60, 0.9) 0%, rgba(45, 53, 97, 0.85) 50%, rgba(74, 88, 153, 0.8) 100%)",
-            zIndex: 0,
-          }}
-        />
-        <div className="container position-relative" style={{ zIndex: 1 }}>
-          <div className="row align-items-center" style={{ minHeight: "600px", paddingTop: 120, paddingBottom: 80 }}>
-            <div className="col-lg-6">
-              <h1
-                className="mb30"
-                style={{
-                  fontSize: "clamp(32px, 5vw, 56px)",
-                  fontWeight: 700,
-                  color: "#fff",
-                  lineHeight: 1.2,
-                }}
-              >
-                From front door to forecast – Your property investment journey starts here.
-              </h1>
-              <p
-                className="mb30"
-                style={{
-                  fontSize: 18,
-                  color: "rgba(255,255,255,0.9)",
-                  lineHeight: 1.6,
-                }}
-              >
-                Discover high-potential short stay properties with dynamic rental appraisals, on-site checklists, and integrated environmental risk data—powered by leading industry APIs.
-              </p>
-              <Link href="/register" className="ud-btn btn-white">
-                Download Sample Report
-                <i className="fal fa-arrow-right-long" />
-              </Link>
-            </div>
-            <div className="col-lg-6 text-center d-none d-lg-block">
-              <Image
-                src="/images/hero-img.svg"
-                alt="Property Investment"
-                width={600}
-                height={500}
-                style={{ maxWidth: "100%", height: "auto" }}
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+      <HeroSection />
       {/* End Hero Section */}
 
       {/* Revenue Section */}
@@ -244,11 +184,16 @@ const Home_V4 = () => {
         <div className="container">
           <div className="row justify-content-center mb60">
             <div className="col-lg-8 text-center">
-              <h2 className="title mb20" style={{ fontSize: 40, fontWeight: 700 }}>
+              <h2
+                className="title mb20"
+                style={{ fontSize: 40, fontWeight: 700 }}
+              >
                 Increase Revenue With Data-Driven Pricing
               </h2>
               <p className="text fz16">
-                From pinpointing a property to presenting investor-ready reports—our dashboard brings every step of the appraisal journey into one seamless workflow.
+                From pinpointing a property to presenting investor-ready
+                reports—our dashboard brings every step of the appraisal journey
+                into one seamless workflow.
               </p>
             </div>
           </div>
@@ -267,7 +212,9 @@ const Home_V4 = () => {
                 Dynamic Pricing
               </h3>
               <p className="text mb30">
-                Now with Hyper Local Pulse (HLP), our smart pricing algorithm that uses hyper local market data to make accurate pricing decisions
+                Now with Hyper Local Pulse (HLP), our smart pricing algorithm
+                that uses hyper local market data to make accurate pricing
+                decisions
               </p>
               <ul className="list-style-none p-0">
                 {pricingFeatures.map((feature, index) => (
@@ -284,10 +231,16 @@ const Home_V4 = () => {
                         justifyContent: "center",
                       }}
                     >
-                      <i className="fas fa-check" style={{ color: "#4caf50", fontSize: 12 }} />
+                      <i
+                        className="fas fa-check"
+                        style={{ color: "#4caf50", fontSize: 12 }}
+                      />
                     </span>
                     <div>
-                      <h6 className="mb5" style={{ fontSize: 16, fontWeight: 600 }}>
+                      <h6
+                        className="mb5"
+                        style={{ fontSize: 16, fontWeight: 600 }}
+                      >
                         {feature.title}
                       </h6>
                       <p className="text mb-0 fz14">{feature.description}</p>
@@ -306,7 +259,10 @@ const Home_V4 = () => {
         <div className="container">
           <div className="row align-items-center">
             <div className="col-lg-6 mb20 mb-lg-0">
-              <h3 className="text-white mb-0 text-center text-lg-start" style={{ fontSize: 22 }}>
+              <h3
+                className="text-white mb-0 text-center text-lg-start"
+                style={{ fontSize: 22 }}
+              >
                 Powered by Trusted Industry Data Sources
               </h3>
             </div>
@@ -317,9 +273,9 @@ const Home_V4 = () => {
                     key={industry.name}
                     src={industry.img}
                     alt={industry.name}
-                    width={150}
-                    height={50}
-                    style={{ height: 40, width: "auto" }}
+                    width={250}
+                    height={90}
+                    style={{ height: 80, width: "auto" }}
                   />
                 ))}
               </div>
@@ -334,11 +290,16 @@ const Home_V4 = () => {
         <div className="container">
           <div className="row justify-content-center mb60">
             <div className="col-lg-8 text-center">
-              <h2 className="title mb20" style={{ fontSize: 40, fontWeight: 700 }}>
+              <h2
+                className="title mb20"
+                style={{ fontSize: 40, fontWeight: 700 }}
+              >
                 Powerful Tools. Clean, Modern Interface.
               </h2>
               <p className="text fz16">
-                From pinpointing a property to presenting investor-ready reports—our dashboard brings every step of the appraisal journey into one seamless workflow.
+                From pinpointing a property to presenting investor-ready
+                reports—our dashboard brings every step of the appraisal journey
+                into one seamless workflow.
               </p>
             </div>
           </div>
@@ -351,8 +312,14 @@ const Home_V4 = () => {
                     className="p30 bgc-white bdrs12"
                     style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
                   >
-                    <h4 className="mb15" style={{ fontSize: 20, fontWeight: 600 }}>
-                      <i className={`${feature.icon} me-2`} style={{ color: "#eb6753" }} />
+                    <h4
+                      className="mb15"
+                      style={{ fontSize: 20, fontWeight: 600 }}
+                    >
+                      <i
+                        className={`${feature.icon} me-2`}
+                        style={{ color: "#eb6753" }}
+                      />
                       {feature.title}
                     </h4>
                     <p className="text mb-0">{feature.description}</p>
@@ -390,7 +357,10 @@ const Home_V4 = () => {
                 className="p30 bgc-white bdrs12 h-100"
                 style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
               >
-                <h4 className="mb20" style={{ color: "#eb6753", fontSize: 20, fontWeight: 600 }}>
+                <h4
+                  className="mb20"
+                  style={{ color: "#eb6753", fontSize: 20, fontWeight: 600 }}
+                >
                   With Our Platform
                 </h4>
                 <ul className="list-style-none p-0 mb-0">
@@ -408,7 +378,10 @@ const Home_V4 = () => {
                           justifyContent: "center",
                         }}
                       >
-                        <i className="fas fa-check" style={{ color: "#4caf50", fontSize: 12 }} />
+                        <i
+                          className="fas fa-check"
+                          style={{ color: "#4caf50", fontSize: 12 }}
+                        />
                       </span>
                       <span>{item}</span>
                     </li>
@@ -421,7 +394,10 @@ const Home_V4 = () => {
                 className="p30 bgc-white bdrs12 h-100"
                 style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
               >
-                <h4 className="mb20" style={{ color: "#eb6753", fontSize: 20, fontWeight: 600 }}>
+                <h4
+                  className="mb20"
+                  style={{ color: "#eb6753", fontSize: 20, fontWeight: 600 }}
+                >
                   Without Our Platform
                 </h4>
                 <ul className="list-style-none p-0 mb-0">
@@ -439,7 +415,10 @@ const Home_V4 = () => {
                           justifyContent: "center",
                         }}
                       >
-                        <i className="fas fa-times" style={{ color: "#f44336", fontSize: 12 }} />
+                        <i
+                          className="fas fa-times"
+                          style={{ color: "#f44336", fontSize: 12 }}
+                        />
                       </span>
                       <span>{item}</span>
                     </li>
@@ -457,7 +436,10 @@ const Home_V4 = () => {
         <div className="container">
           <div className="row justify-content-center mb60">
             <div className="col-lg-8 text-center">
-              <h2 className="title text-white" style={{ fontSize: 40, fontWeight: 700 }}>
+              <h2
+                className="title text-white"
+                style={{ fontSize: 40, fontWeight: 700 }}
+              >
                 Testimonials
               </h2>
             </div>
@@ -508,11 +490,15 @@ const Home_V4 = () => {
         <div className="container">
           <div className="row justify-content-center mb60">
             <div className="col-lg-8 text-center">
-              <h2 className="title mb20" style={{ fontSize: 40, fontWeight: 700 }}>
+              <h2
+                className="title mb20"
+                style={{ fontSize: 40, fontWeight: 700 }}
+              >
                 Simple Pricing for Powerful Insights.
               </h2>
               <p className="text fz18">
-                Whether you&apos;re a solo agent or managing multiple clients, our plans scale with your needs.
+                Whether you&apos;re a solo agent or managing multiple clients,
+                our plans scale with your needs.
               </p>
             </div>
           </div>
@@ -525,7 +511,9 @@ const Home_V4 = () => {
                   }`}
                   style={{
                     boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                    border: plan.isPopular ? "2px solid #eb6753" : "1px solid #eee",
+                    border: plan.isPopular
+                      ? "2px solid #eb6753"
+                      : "1px solid #eee",
                   }}
                 >
                   <div className="mb30">
@@ -533,11 +521,22 @@ const Home_V4 = () => {
                       {plan.type}
                     </h6>
                     <div className="d-flex align-items-baseline">
-                      <span style={{ color: "#eb6753", fontSize: 14, fontWeight: 600 }}>
+                      <span
+                        style={{
+                          color: "#eb6753",
+                          fontSize: 14,
+                          fontWeight: 600,
+                        }}
+                      >
                         {plan.currency}
                       </span>
                       <span
-                        style={{ color: "#eb6753", fontSize: 40, fontWeight: 700, marginLeft: 4 }}
+                        style={{
+                          color: "#eb6753",
+                          fontSize: 40,
+                          fontWeight: 700,
+                          marginLeft: 4,
+                        }}
                       >
                         {plan.price}
                       </span>
@@ -550,7 +549,10 @@ const Home_V4 = () => {
                     </h6>
                     <ul className="list-style-none p-0 mb30">
                       {plan.features.map((feature, i) => (
-                        <li key={i} className="d-flex align-items-center mb10 text fz14">
+                        <li
+                          key={i}
+                          className="d-flex align-items-center mb10 text fz14"
+                        >
                           <span
                             className="me-2 flex-shrink-0"
                             style={{
@@ -563,7 +565,10 @@ const Home_V4 = () => {
                               justifyContent: "center",
                             }}
                           >
-                            <i className="fas fa-check" style={{ color: "#4caf50", fontSize: 10 }} />
+                            <i
+                              className="fas fa-check"
+                              style={{ color: "#4caf50", fontSize: 10 }}
+                            />
                           </span>
                           {feature}
                         </li>
