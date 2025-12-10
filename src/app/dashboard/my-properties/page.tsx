@@ -1,223 +1,228 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { getUserProperties, getPropertyById, getAllPropertyIds } from "@/actions/properties";
+import { getUserProperties, type PropertyWithAppraisal } from "@/actions/properties";
 
 export const metadata = {
   title: "My Properties | Dashboard",
 };
 
-// Revalidate every 30 seconds
-export const revalidate = 30;
+export const dynamic = 'force-dynamic';
 
-// Prefetch all property detail pages when this page loads
-async function prefetchPropertyPages() {
-  const propertyIds = await getAllPropertyIds();
-  // Trigger cache population for each property
-  await Promise.all(propertyIds.map(id => getPropertyById(id)));
-}
-
-// Loading skeleton
-function TableSkeleton() {
+// Property card skeleton
+function CardSkeleton() {
   return (
-    <div className="table-responsive">
-      <table className="table table-hover align-middle mb-0">
-        <thead>
-          <tr className="text-uppercase fz12 fw600">
-            <th className="py-3 ps-3 border-bottom text-muted" style={{ minWidth: 280 }}>Property</th>
-            <th className="py-3 px-3 border-bottom text-muted" style={{ minWidth: 100 }}>Type</th>
-            <th className="py-3 px-3 border-bottom text-muted text-center" style={{ minWidth: 100 }}>Beds / Baths</th>
-            <th className="py-3 px-3 border-bottom text-muted text-center" style={{ minWidth: 120 }}>Status</th>
-            <th className="py-3 pe-3 border-bottom text-muted text-end" style={{ minWidth: 140 }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {[1, 2, 3, 4, 5].map((i) => (
-            <tr key={i} className="border-bottom">
-              <td className="py-3 ps-3">
-                <div className="d-flex align-items-center">
-                  <div className="skeleton-box" style={{ width: 56, height: 56, borderRadius: 10 }}></div>
-                  <div className="ms-3">
-                    <div className="skeleton-box mb-2" style={{ width: 180, height: 15 }}></div>
-                    <div className="skeleton-box" style={{ width: 100, height: 13 }}></div>
-                  </div>
-                </div>
-              </td>
-              <td className="py-3 px-3">
-                <div className="skeleton-box" style={{ width: 70, height: 14 }}></div>
-              </td>
-              <td className="py-3 px-3 text-center">
-                <div className="skeleton-box mx-auto" style={{ width: 50, height: 14 }}></div>
-              </td>
-              <td className="py-3 px-3 text-center">
-                <div className="skeleton-box mx-auto rounded-pill" style={{ width: 90, height: 26 }}></div>
-              </td>
-              <td className="py-3 pe-3 text-end">
-                <div className="d-inline-flex gap-2">
-                  <div className="skeleton-box rounded-1" style={{ width: 60, height: 34 }}></div>
-                  <div className="skeleton-box rounded-1" style={{ width: 60, height: 34 }}></div>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="col-sm-6 col-xl-4">
+      <div
+        className="ps-widget bgc-white bdrs12 p30 mb30 overflow-hidden position-relative"
+        style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}
+      >
+        <div className="skeleton-box mb-3" style={{ width: "70%", height: 20 }}></div>
+        <div className="d-flex gap-3 mb-3">
+          <div className="skeleton-box" style={{ width: 100, height: 16 }}></div>
+          <div className="skeleton-box" style={{ width: 100, height: 16 }}></div>
+        </div>
+        <div className="skeleton-box mb-2" style={{ width: "50%", height: 16 }}></div>
+        <div className="skeleton-box" style={{ width: "40%", height: 16 }}></div>
+      </div>
     </div>
   );
 }
 
-// Property table component
-async function PropertyTable() {
-  // Fetch properties and prefetch detail pages in parallel
-  const [properties] = await Promise.all([
-    getUserProperties(),
-    prefetchPropertyPages(),
-  ]);
+function CardsSkeleton() {
+  return (
+    <>
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <CardSkeleton key={i} />
+      ))}
+    </>
+  );
+}
 
-  if (properties.length === 0) {
-    return (
-      <div className="text-center py-5">
-        <i className="flaticon-home fz60 text-muted mb-4 d-block" />
-        <h4 className="mb-3">No properties yet</h4>
-        <p className="text-muted mb-4">
-          Add your first property to start generating appraisal reports.
-        </p>
-        <Link href="/dashboard/add-property" className="ud-btn btn-thm">
-          <i className="fal fa-plus me-2" />
-          Add Property
+// Property card component - simplified, no additional data fetching
+function PropertyCard({ property }: { property: PropertyWithAppraisal }) {
+  const lastAppraisalDate = property.latestAppraisal?.createdAt
+    ? new Date(property.latestAppraisal.createdAt).toLocaleDateString("en-AU", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
+
+  return (
+    <div className="col-sm-6 col-xl-4">
+      <div
+        className="ps-widget bgc-white bdrs12 p30 mb30 overflow-hidden position-relative"
+        style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}
+      >
+        {/* Three dots menu */}
+        <div className="dropdown position-absolute" style={{ top: 20, right: 20 }}>
+          <button
+            className="btn p-0"
+            type="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+            style={{ color: "#888", fontSize: 18 }}
+          >
+            <i className="fas fa-ellipsis-v" />
+          </button>
+          <ul className="dropdown-menu dropdown-menu-end">
+            <li>
+              <Link className="dropdown-item fz14" href={`/dashboard/my-properties/${property.id}`}>
+                <i className="fas fa-eye me-2" /> View Details
+              </Link>
+            </li>
+            <li>
+              <Link className="dropdown-item fz14" href={`/dashboard/my-properties/${property.id}/edit`}>
+                <i className="fas fa-edit me-2" /> Edit Property
+              </Link>
+            </li>
+            <li>
+              <Link className="dropdown-item fz14" href={`/dashboard/my-properties/${property.id}/generate-report`}>
+                <i className="fas fa-file-pdf me-2" /> Generate Report
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        {/* Address */}
+        <Link
+          href={`/dashboard/my-properties/${property.id}`}
+          className="text-decoration-none"
+        >
+          <h5
+            className="fw600 mb20"
+            style={{
+              color: "#222",
+              fontSize: 16,
+              lineHeight: 1.4,
+              paddingRight: 30,
+            }}
+          >
+            {property.addressCommonName}
+          </h5>
+        </Link>
+
+        {/* Property Info */}
+        <div className="d-flex flex-wrap gap-4 mb15 fz14">
+          {property.bedroomCount && (
+            <div>
+              <span style={{ color: "#888" }}>Bedrooms</span>
+              <span className="ms-2 fw500" style={{ color: "#222" }}>{property.bedroomCount}</span>
+            </div>
+          )}
+          {property.bathroomCount && (
+            <div>
+              <span style={{ color: "#888" }}>Bathrooms</span>
+              <span className="ms-2 fw500" style={{ color: "#222" }}>{property.bathroomCount}</span>
+            </div>
+          )}
+          {property.propertyType && (
+            <div>
+              <span style={{ color: "#888" }}>Type</span>
+              <span className="ms-2 fw500" style={{ color: "#222" }}>{property.propertyType}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Last Appraisal Date */}
+        <div className="fz14">
+          <span style={{ color: "#888" }}>Last Appraisal</span>
+          <span className="ms-3" style={{ color: "#222" }}>
+            {lastAppraisalDate || "N/A"}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Error component
+function ErrorMessage({ error }: { error: string }) {
+  return (
+    <div className="col-12">
+      <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 text-center">
+        <i className="fas fa-exclamation-triangle fz60 text-warning mb-4 d-block" />
+        <h4 className="mb-3">Unable to load properties</h4>
+        <p className="text-muted mb-4">{error}</p>
+        <Link href="/dashboard" className="ud-btn btn-thm">
+          <i className="fal fa-arrow-left me-2" />
+          Back to Dashboard
         </Link>
       </div>
-    );
-  }
-
-  return (
-    <div className="table-responsive">
-      <table className="table table-hover align-middle mb-0">
-        <thead>
-          <tr className="text-uppercase fz12 fw600">
-            <th className="py-3 ps-3 border-bottom text-muted" style={{ minWidth: 280 }}>Property</th>
-            <th className="py-3 px-3 border-bottom text-muted" style={{ minWidth: 100 }}>Type</th>
-            <th className="py-3 px-3 border-bottom text-muted text-center" style={{ minWidth: 100 }}>Beds / Baths</th>
-            <th className="py-3 px-3 border-bottom text-muted text-center" style={{ minWidth: 120 }}>Status</th>
-            <th className="py-3 pe-3 border-bottom text-muted text-end" style={{ minWidth: 140 }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {properties.map((property) => (
-            <tr key={property.id} className="border-bottom">
-              <td className="py-3 ps-3">
-                <div className="d-flex align-items-center">
-                  <div
-                    className="flex-shrink-0 d-flex align-items-center justify-content-center"
-                    style={{
-                      width: 56,
-                      height: 56,
-                      backgroundColor: "#f8f9fa",
-                      borderRadius: 10,
-                    }}
-                  >
-                    <i className="flaticon-home fz20" style={{ color: "#6c757d" }} />
-                  </div>
-                  <div className="ms-3">
-                    <Link
-                      href={`/dashboard/my-properties/${property.id}`}
-                      className="fw600 fz15 text-dark text-decoration-none d-block mb-1"
-                      style={{ lineHeight: 1.3 }}
-                      prefetch={true}
-                    >
-                      {property.addressCommonName.length > 35
-                        ? `${property.addressCommonName.substring(0, 35)}...`
-                        : property.addressCommonName}
-                    </Link>
-                    <span className="fz13" style={{ color: "#8a8a8a" }}>
-                      Added{" "}
-                      {new Date(property.createdAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
-                </div>
-              </td>
-              <td className="py-3 px-3">
-                <span className="fz14" style={{ color: "#555" }}>
-                  {property.propertyType || "—"}
-                </span>
-              </td>
-              <td className="py-3 px-3 text-center">
-                <span className="fz14" style={{ color: "#555" }}>
-                  {property.bedroomCount || "—"} / {property.bathroomCount || "—"}
-                </span>
-              </td>
-              <td className="py-3 px-3 text-center">
-                <span
-                  className="fz12 fw600 d-inline-block px-3 py-1 rounded-pill"
-                  style={{
-                    backgroundColor:
-                      property.latestAppraisal?.status === "completed"
-                        ? "#e8f5e9"
-                        : property.latestAppraisal?.status === "processing"
-                        ? "#e3f2fd"
-                        : "#fff8e1",
-                    color:
-                      property.latestAppraisal?.status === "completed"
-                        ? "#2e7d32"
-                        : property.latestAppraisal?.status === "processing"
-                        ? "#1565c0"
-                        : "#f57c00",
-                  }}
-                >
-                  {property.latestAppraisal?.status === "completed"
-                    ? "Report Ready"
-                    : property.latestAppraisal?.status === "processing"
-                    ? "Processing"
-                    : "Pending"}
-                </span>
-              </td>
-              <td className="py-3 pe-3 text-end">
-                <div className="d-inline-flex gap-2">
-                  <Link
-                    href={`/dashboard/my-properties/${property.id}`}
-                    className="ud-btn btn-white2 btn-sm fz12 fw600"
-                    style={{ padding: "8px 16px" }}
-                    prefetch={true}
-                  >
-                    View
-                  </Link>
-                  {property.latestAppraisal?.pdfUrl && (
-                    <a
-                      href={property.latestAppraisal.pdfUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ud-btn btn-thm btn-sm fz12 fw600"
-                      style={{ padding: "8px 16px" }}
-                    >
-                      <i className="fas fa-file-pdf fz10 me-1" />
-                      PDF
-                    </a>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
+}
+
+// Property cards grid
+async function PropertyCards() {
+  try {
+    const properties = await getUserProperties();
+
+    if (properties.length === 0) {
+      return (
+        <div className="col-12">
+          <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 text-center">
+            <i className="flaticon-home fz60 text-muted mb-4 d-block" />
+            <h4 className="mb-3">No properties yet</h4>
+            <p className="text-muted mb-4">
+              Add your first property to start generating appraisal reports.
+            </p>
+            <Link href="/dashboard/add-property" className="ud-btn btn-thm">
+              <i className="fal fa-plus me-2" />
+              Add Property
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {properties.map((property) => (
+          <PropertyCard key={property.id} property={property} />
+        ))}
+      </>
+    );
+  } catch (error) {
+    console.error("Error loading properties:", error);
+    return <ErrorMessage error="Please try refreshing the page." />;
+  }
 }
 
 export default function MyPropertiesPage() {
   return (
     <>
-      <div className="row align-items-center pb40">
-        <div className="col-lg-8">
+      {/* Header */}
+      <div className="row align-items-center pb30">
+        <div className="col-lg-6">
           <div className="dashboard_title_area">
             <h2>My Properties</h2>
             <p className="text">Manage your properties and appraisal reports</p>
           </div>
         </div>
-        <div className="col-lg-4">
-          <div className="d-flex justify-content-lg-end">
+        <div className="col-lg-6">
+          <div className="d-flex flex-wrap justify-content-lg-end gap-3">
+            {/* Search input */}
+            <div className="position-relative">
+              <i
+                className="fas fa-search position-absolute"
+                style={{ left: 14, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 14 }}
+              />
+              <input
+                type="text"
+                placeholder="Search..."
+                className="form-control"
+                style={{
+                  paddingLeft: 40,
+                  borderRadius: 8,
+                  border: "1px solid #e0e0e0",
+                  width: 200,
+                  fontSize: 14,
+                }}
+              />
+            </div>
+
+            {/* Add Property button */}
             <Link href="/dashboard/add-property" className="ud-btn btn-thm">
               <i className="fal fa-plus me-2" />
               Add Property
@@ -226,14 +231,11 @@ export default function MyPropertiesPage() {
         </div>
       </div>
 
+      {/* Property Cards Grid */}
       <div className="row">
-        <div className="col-12">
-          <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-            <Suspense fallback={<TableSkeleton />}>
-              <PropertyTable />
-            </Suspense>
-          </div>
-        </div>
+        <Suspense fallback={<CardsSkeleton />}>
+          <PropertyCards />
+        </Suspense>
       </div>
     </>
   );

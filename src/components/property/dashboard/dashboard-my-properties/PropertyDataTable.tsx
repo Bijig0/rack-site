@@ -134,12 +134,12 @@ const PropertyDataTable = () => {
             <th scope="row">
               <div className="listing-style1 dashboard-style d-xxl-flex align-items-center mb-0">
                 <div className="list-thumb">
-                  {property.propertyImageUrl ? (
+                  {property.mainImageUrl ? (
                     <Image
                       width={110}
                       height={94}
                       className="w-100"
-                      src={property.propertyImageUrl}
+                      src={property.mainImageUrl}
                       alt={property.addressCommonName}
                       style={{ objectFit: "cover" }}
                     />

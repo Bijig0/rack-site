@@ -196,9 +196,9 @@ const DashboardPropertyDetail = async ({ params }: { params: Promise<{ id: strin
                       <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 overflow-hidden position-relative">
                         <div className="row">
                           <div className="col-md-8">
-                            {property.propertyImageUrl ? (
+                            {property.mainImageUrl ? (
                               <Image
-                                src={property.propertyImageUrl}
+                                src={property.mainImageUrl}
                                 alt={property.addressCommonName}
                                 width={800}
                                 height={500}

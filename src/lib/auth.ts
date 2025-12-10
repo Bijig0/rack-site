@@ -33,9 +33,12 @@ export async function getSession(): Promise<TokenPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
 
+  console.log('[getSession] Token exists:', !!token);
   if (!token) return null;
 
-  return await verifyToken(token);
+  const result = await verifyToken(token);
+  console.log('[getSession] Token valid:', !!result);
+  return result;
 }
 
 export async function setAuthCookie(token: string): Promise<void> {

@@ -1,14 +1,28 @@
 "use client";
 
-import MainMenu from "@/components/common/MainMenu";
 import SidebarPanel from "@/components/common/sidebar-panel";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { usePathname } from "next/navigation";
+import { useSidebar } from "@/context/SidebarContext";
 
 const DashboardHeader = () => {
   const pathname = usePathname();
+  const { toggleSidebar } = useSidebar();
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+      if (response.ok) {
+        window.location.href = "/login";
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   const menuItems = [
     {
@@ -17,12 +31,7 @@ const DashboardHeader = () => {
         {
           icon: "flaticon-discovery",
           text: "Dashboard",
-          href: "/dashboard-home",
-        },
-        {
-          icon: "flaticon-chat-1",
-          text: "Message",
-          href: "/dashboard-message",
+          href: "/dashboard",
         },
       ],
     },
@@ -30,42 +39,30 @@ const DashboardHeader = () => {
       title: "MANAGE LISTINGS",
       items: [
         {
-          icon: "flaticon-new-tab",
-          text: "Add New Property",
-          href: "/dashboard-add-property",
-        },
-        {
           icon: "flaticon-home",
           text: "My Properties",
-          href: "/dashboard-my-properties",
+          href: "/dashboard/my-properties",
         },
         {
-          icon: "flaticon-like",
-          text: "My Favorites",
-          href: "/dashboard-my-favourites",
+          icon: "flaticon-new-tab",
+          text: "Add Property",
+          href: "/dashboard/add-property",
         },
         {
-          icon: "flaticon-search-2",
-          text: "Saved Search",
-          href: "/dashboard-saved-search",
+          icon: "fas fa-file-alt",
+          text: "Appraisal Reports",
+          href: "/dashboard/appraisal-reports",
         },
-        { icon: "flaticon-review", text: "Reviews", href: "/dashboard-review" },
       ],
     },
     {
       title: "MANAGE ACCOUNT",
       items: [
         {
-          icon: "flaticon-protection",
-          text: "My Package",
-          href: "/dashboard-my-package",
-        },
-        {
           icon: "flaticon-user",
           text: "My Profile",
-          href: "/dashboard-my-profile",
+          href: "/dashboard/profile",
         },
-        { icon: "flaticon-exit", text: "Logout", href: "/login" },
       ],
     },
   ];
@@ -88,10 +85,25 @@ const DashboardHeader = () => {
                       />
                     </Link>
                   </div>
-                  {/* End Logo */}
 
+                  {/* Desktop: Toggle sidebar collapse */}
+                  <button
+                    className="dashboard_sidebar_toggle_icon text-thm1 vam d-none d-lg-block btn p-0 border-0 bg-transparent"
+                    onClick={toggleSidebar}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <Image
+                      width={25}
+                      height={9}
+                      className="img-1"
+                      src="/images/dark-nav-icon.svg"
+                      alt="menu"
+                    />
+                  </button>
+
+                  {/* Mobile: Open offcanvas sidebar */}
                   <a
-                    className="dashboard_sidebar_toggle_icon text-thm1 vam"
+                    className="dashboard_sidebar_toggle_icon text-thm1 vam d-lg-none"
                     href="#"
                     data-bs-toggle="offcanvas"
                     data-bs-target="#SidebarPanel"
@@ -102,47 +114,46 @@ const DashboardHeader = () => {
                       height={9}
                       className="img-1"
                       src="/images/dark-nav-icon.svg"
-                      alt="humberger menu"
+                      alt="menu"
                     />
                   </a>
                 </div>
               </div>
-              {/* End .col-auto */}
-
-              <div className="d-none d-lg-block col-lg-auto">
-                <MainMenu />
-                {/* End Main Menu */}
-              </div>
-              {/* End d-none d-lg-block */}
 
               <div className="col-6 col-lg-auto">
                 <div className="text-center text-lg-end header_right_widgets">
-                  <ul className="mb0 d-flex justify-content-center justify-content-sm-end p-0">
-                    <li className="d-none d-sm-block">
-                      <Link className="text-center mr15" href="/login">
-                        <span className="flaticon-email" />
-                      </Link>
-                    </li>
-                    {/* End email box */}
-
-                    <li className="d-none d-sm-block">
-                      <a className="text-center mr20 notif" href="#">
-                        <span className="flaticon-bell" />
-                      </a>
-                    </li>
-                    {/* End notification icon */}
-
-                    <li className=" user_setting">
+                  <ul className="mb0 d-flex justify-content-center justify-content-sm-end align-items-center p-0">
+                    <li className="user_setting">
                       <div className="dropdown">
-                        <a className="btn" href="#" data-bs-toggle="dropdown">
-                          <Image
-                            width={44}
-                            height={44}
-                            src="/images/resource/user.png"
-                            alt="user.png"
+                        <a
+                          className="btn d-flex align-items-center gap-2 p-0"
+                          href="#"
+                          data-bs-toggle="dropdown"
+                        >
+                          {/* User icon */}
+                          <div
+                            className="d-flex align-items-center justify-content-center"
+                            style={{
+                              width: 44,
+                              height: 44,
+                              backgroundColor: "#f0f0f0",
+                              borderRadius: "50%",
+                            }}
+                          >
+                            <i
+                              className="fas fa-user"
+                              style={{ fontSize: 18, color: "#666" }}
+                            />
+                          </div>
+                          <span className="d-none d-sm-inline fw500 fz14">
+                            My Account
+                          </span>
+                          <i
+                            className="fas fa-chevron-down d-none d-sm-inline"
+                            style={{ fontSize: 10, color: "#666" }}
                           />
                         </a>
-                        <div className="dropdown-menu">
+                        <div className="dropdown-menu dropdown-menu-end">
                           <div className="user_setting_content">
                             {menuItems.map((section, sectionIndex) => (
                               <div key={sectionIndex}>
@@ -157,8 +168,11 @@ const DashboardHeader = () => {
                                   <Link
                                     key={itemIndex}
                                     className={`dropdown-item ${
-                                      pathname == item.href ? "-is-active" : ""
-                                    } `}
+                                      pathname === item.href ||
+                                      pathname.startsWith(item.href + "/")
+                                        ? "-is-active"
+                                        : ""
+                                    }`}
                                     href={item.href}
                                   >
                                     <i className={`${item.icon} mr10`} />
@@ -167,32 +181,41 @@ const DashboardHeader = () => {
                                 ))}
                               </div>
                             ))}
+                            {/* Logout */}
+                            <div className="mt30 pt20 border-top">
+                              <a
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleLogout();
+                                }}
+                                className="dropdown-item text-danger"
+                              >
+                                <i className="flaticon-exit mr10" />
+                                Logout
+                              </a>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </li>
-                    {/* End avatar dropdown */}
                   </ul>
                 </div>
               </div>
-              {/* End .col-6 */}
             </div>
-            {/* End .row */}
           </div>
         </nav>
       </header>
-      {/* End Header */}
 
-      {/* DesktopSidebarMenu */}
+      {/* Sidebar Panel for mobile */}
       <div
         className="offcanvas offcanvas-end"
-        tabIndex="-1"
+        tabIndex={-1}
         id="SidebarPanel"
         aria-labelledby="SidebarPanelLabel"
       >
         <SidebarPanel />
       </div>
-      {/* Sidebar Panel End */}
     </>
   );
 };

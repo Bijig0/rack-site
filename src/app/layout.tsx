@@ -1,6 +1,7 @@
 "use client";
 import ScrollToTop from "@/components/common/ScrollTop";
 import QueryProvider from "@/components/providers/QueryProvider";
+import ToastProvider from "@/components/providers/ToastProvider";
 import Aos from "aos";
 // Original theme styles (Bootstrap + all custom CSS/SCSS)
 import "swiper/css";
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <QueryProvider>
           <div className="wrapper ovh">{children}</div>
           <ScrollToTop />
+          <ToastProvider />
         </QueryProvider>
       </body>
     </html>

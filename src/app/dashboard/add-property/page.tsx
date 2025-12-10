@@ -3,45 +3,74 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { revalidateProperties } from "@/actions/properties";
+import AddressAutocomplete from "@/components/property/AddressAutocomplete";
+import { usePropertyJobs } from "@/context/PropertyJobsContext";
+import type { Address } from "@/lib/address-schema";
 
 export default function AddPropertyPage() {
   const router = useRouter();
+  const { addJob, showToast } = usePropertyJobs();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validatedAddress, setValidatedAddress] = useState<Address | null>(null);
+  const [addressCommonName, setAddressCommonName] = useState("");
+
+  const handleAddressChange = (address: Address | null, commonName: string) => {
+    setValidatedAddress(address);
+    setAddressCommonName(commonName);
+    setError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!validatedAddress) {
+      setError("Please select and validate an address");
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      addressCommonName: formData.get("addressCommonName"),
-    };
-
     try {
-      const response = await fetch("/api/properties", {
+      // Call our same-origin proxy endpoint which forwards to the dedicated server
+      const response = await fetch("/api/properties/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          addressLine: validatedAddress.addressLine,
+          suburb: validatedAddress.suburb,
+          state: validatedAddress.state,
+          postcode: validatedAddress.postcode,
+        }),
       });
 
       if (!response.ok) {
-        const result = await response.json();
-        throw new Error(result.message || "Failed to create property");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || `Server error: ${response.status}`);
       }
 
       const result = await response.json();
 
-      // Revalidate caches
-      await revalidateProperties();
+      if (!result.jobId) {
+        throw new Error("Invalid response from server - missing jobId");
+      }
 
-      // Redirect to the new property
-      router.push(`/dashboard/my-properties/${result.payload.id}`);
+      // Add job to pending jobs for polling
+      addJob({
+        jobId: result.jobId,
+        statusUrl: result.statusUrl || `/api/properties/jobs/${result.jobId}`,
+        addressCommonName,
+      });
+
+      showToast("info", `Creating property "${addressCommonName}"...`);
+
+      // Redirect to My Properties page where the job will be polled
+      router.push("/dashboard/my-properties");
     } catch (err) {
+      console.error("Error creating property:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
       setIsSubmitting(false);
     }
@@ -63,7 +92,7 @@ export default function AddPropertyPage() {
       </div>
 
       <div className="row justify-content-center">
-        <div className="col-xl-6">
+        <div className="col-xl-8">
           <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
             <h4 className="title fz17 mb30">Property Address</h4>
 
@@ -75,27 +104,12 @@ export default function AddPropertyPage() {
             )}
 
             <form onSubmit={handleSubmit}>
-              <div className="mb30">
-                <label className="form-label fw500 fz16">
-                  Enter the full property address
-                </label>
-                <input
-                  type="text"
-                  name="addressCommonName"
-                  className="form-control form-control-lg"
-                  placeholder="e.g., 123 Main Street, Sydney NSW 2000"
-                  required
-                  autoFocus
-                />
-                <small className="text-muted mt-2 d-block">
-                  Include street number, street name, suburb, state, and postcode
-                </small>
-              </div>
+              <AddressAutocomplete onAddressChange={handleAddressChange} />
 
-              <div className="d-flex gap-3">
+              <div className="d-flex gap-3 mt30">
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !validatedAddress}
                   className="ud-btn btn-thm flex-grow-1"
                 >
                   {isSubmitting ? (

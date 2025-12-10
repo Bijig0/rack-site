@@ -1,13 +1,11 @@
 'use server';
 
-import { db } from '@/db/drizzle';
+import { db } from '@/lib/db';
 import { user, account } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { hash, compare } from 'bcryptjs';
 import { revalidateTag } from 'next/cache';
-
-// For now, use a hardcoded user ID until auth is fully integrated
-const DEFAULT_USER_ID = 'agent-user-001';
+import { getSession } from '@/lib/auth';
 
 export type UserProfile = {
   id: string;
@@ -18,10 +16,21 @@ export type UserProfile = {
 };
 
 /**
+ * Get current authenticated user ID
+ */
+async function getAuthenticatedUserId(): Promise<string> {
+  const session = await getSession();
+  if (!session?.userId) {
+    throw new Error('Not authenticated');
+  }
+  return session.userId;
+}
+
+/**
  * Get user profile
  */
-export async function getUserProfile(userId?: string): Promise<UserProfile | null> {
-  const targetUserId = userId || DEFAULT_USER_ID;
+export async function getUserProfile(): Promise<UserProfile | null> {
+  const userId = await getAuthenticatedUserId();
 
   const users = await db
     .select({
@@ -32,7 +41,7 @@ export async function getUserProfile(userId?: string): Promise<UserProfile | nul
       createdAt: user.createdAt,
     })
     .from(user)
-    .where(eq(user.id, targetUserId))
+    .where(eq(user.id, userId))
     .limit(1);
 
   return users[0] || null;
@@ -41,8 +50,8 @@ export async function getUserProfile(userId?: string): Promise<UserProfile | nul
 /**
  * Update user name
  */
-export async function updateUserName(newName: string, userId?: string) {
-  const targetUserId = userId || DEFAULT_USER_ID;
+export async function updateUserName(newName: string) {
+  const userId = await getAuthenticatedUserId();
 
   if (!newName || newName.trim().length === 0) {
     return { success: false, error: 'Name is required' };
@@ -55,7 +64,7 @@ export async function updateUserName(newName: string, userId?: string) {
         name: newName.trim(),
         updatedAt: new Date(),
       } as any)
-      .where(eq(user.id, targetUserId));
+      .where(eq(user.id, userId));
 
     revalidateTag('user-profile');
     return { success: true };
@@ -68,8 +77,8 @@ export async function updateUserName(newName: string, userId?: string) {
 /**
  * Update user email
  */
-export async function updateUserEmail(newEmail: string, userId?: string) {
-  const targetUserId = userId || DEFAULT_USER_ID;
+export async function updateUserEmail(newEmail: string) {
+  const userId = await getAuthenticatedUserId();
 
   if (!newEmail || !newEmail.includes('@')) {
     return { success: false, error: 'Valid email is required' };
@@ -83,7 +92,7 @@ export async function updateUserEmail(newEmail: string, userId?: string) {
       .where(eq(user.email, newEmail.toLowerCase()))
       .limit(1);
 
-    if (existingUser.length > 0 && existingUser[0].id !== targetUserId) {
+    if (existingUser.length > 0 && existingUser[0].id !== userId) {
       return { success: false, error: 'Email is already in use' };
     }
 
@@ -94,7 +103,7 @@ export async function updateUserEmail(newEmail: string, userId?: string) {
         emailVerified: false, // Reset verification when email changes
         updatedAt: new Date(),
       } as any)
-      .where(eq(user.id, targetUserId));
+      .where(eq(user.id, userId));
 
     revalidateTag('user-profile');
     return { success: true };
@@ -109,10 +118,9 @@ export async function updateUserEmail(newEmail: string, userId?: string) {
  */
 export async function changeUserPassword(
   currentPassword: string,
-  newPassword: string,
-  userId?: string
+  newPassword: string
 ) {
-  const targetUserId = userId || DEFAULT_USER_ID;
+  const userId = await getAuthenticatedUserId();
 
   if (!currentPassword || !newPassword) {
     return { success: false, error: 'Current and new password are required' };
@@ -132,7 +140,7 @@ export async function changeUserPassword(
       .from(account)
       .where(
         and(
-          eq(account.userId, targetUserId),
+          eq(account.userId, userId),
           eq(account.providerId, 'credential')
         )
       )

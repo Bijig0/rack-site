@@ -7,19 +7,31 @@ const DboardMobileNavigation = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const pathname = usePathname();
 
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        // Hard redirect to ensure cookie removal is recognized
+        window.location.href = "/login";
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   const sidebarItems = [
     {
       title: "MAIN",
       items: [
         {
-          href: "/dashboard-home",
+          href: "/dashboard",
           icon: "flaticon-discovery",
           text: "Dashboard",
-        },
-        {
-          href: "/dashboard-message",
-          icon: "flaticon-chat-1",
-          text: "Message",
         },
       ],
     },
@@ -27,29 +39,14 @@ const DboardMobileNavigation = () => {
       title: "MANAGE LISTINGS",
       items: [
         {
-          href: "/dashboard-add-property",
-          icon: "flaticon-new-tab",
-          text: "Add New Property",
-        },
-        {
-          href: "/dashboard-my-properties",
+          href: "/dashboard/my-properties",
           icon: "flaticon-home",
           text: "My Properties",
         },
         {
-          href: "/dashboard-my-favourites",
-          icon: "flaticon-like",
-          text: "My Favorites",
-        },
-        {
-          href: "/dashboard-saved-search",
-          icon: "flaticon-search-2",
-          text: "Saved Search",
-        },
-        {
-          href: "/dashboard-reviews",
-          icon: "flaticon-review",
-          text: "Reviews",
+          href: "/dashboard/add-property",
+          icon: "flaticon-add-new",
+          text: "Add Property",
         },
       ],
     },
@@ -57,19 +54,9 @@ const DboardMobileNavigation = () => {
       title: "MANAGE ACCOUNT",
       items: [
         {
-          href: "/dashboard-my-package",
-          icon: "flaticon-protection",
-          text: "My Package",
-        },
-        {
-          href: "/dashboard-my-profile",
+          href: "/dashboard/profile",
           icon: "flaticon-user",
           text: "My Profile",
-        },
-        {
-          href: "/login",
-          icon: "flaticon-logout",
-          text: "Logout",
         },
       ],
     },
@@ -98,9 +85,9 @@ const DboardMobileNavigation = () => {
                 <div key={itemIndex} className="sidebar_list_item">
                   <Link
                     href={item.href}
-                    className={`items-center   ${
+                    className={`items-center ${
                       pathname == item.href ? "-is-active" : ""
-                    } `}
+                    }`}
                   >
                     <i className={`${item.icon} mr15`} />
                     {item.text}
@@ -109,6 +96,19 @@ const DboardMobileNavigation = () => {
               ))}
             </div>
           ))}
+
+          {/* Logout button */}
+          <div className="sidebar_list_item">
+            <a
+              href="#"
+              onClick={handleLogout}
+              className="items-center"
+              style={{ cursor: "pointer" }}
+            >
+              <i className="flaticon-logout mr15" />
+              Logout
+            </a>
+          </div>
         </ul>
       </div>
     </div>

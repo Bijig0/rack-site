@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { eq, and } from 'drizzle-orm';
 import { db } from '@/db/drizzle';
 import { property } from '@/db/schema';
-
-// Hardcoded user ID for now until auth is integrated
-const DEFAULT_USER_ID = 'agent-user-001';
+import { getSession } from '@/lib/auth';
 
 /**
  * GET /api/properties/[id]
@@ -14,6 +12,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { status: 'fail', message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
 
     const [foundProperty] = await db
@@ -22,7 +28,7 @@ export async function GET(
       .where(
         and(
           eq(property.id, id),
-          eq(property.userId, DEFAULT_USER_ID)
+          eq(property.userId, session.userId)
         )
       );
 
@@ -54,6 +60,14 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { status: 'fail', message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -66,7 +80,6 @@ export async function PUT(
     if (body.bedroomCount !== undefined) updateData.bedroomCount = body.bedroomCount;
     if (body.bathroomCount !== undefined) updateData.bathroomCount = body.bathroomCount;
     if (body.landAreaSqm !== undefined) updateData.landAreaSqm = body.landAreaSqm;
-    if (body.propertyImageUrl !== undefined) updateData.propertyImageUrl = body.propertyImageUrl;
 
     const [updated] = await db
       .update(property)
@@ -74,7 +87,7 @@ export async function PUT(
       .where(
         and(
           eq(property.id, id),
-          eq(property.userId, DEFAULT_USER_ID)
+          eq(property.userId, session.userId)
         )
       )
       .returning();
@@ -108,6 +121,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { status: 'fail', message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
 
     const [deleted] = await db
@@ -115,7 +136,7 @@ export async function DELETE(
       .where(
         and(
           eq(property.id, id),
-          eq(property.userId, DEFAULT_USER_ID)
+          eq(property.userId, session.userId)
         )
       )
       .returning();

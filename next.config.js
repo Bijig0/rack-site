@@ -18,6 +18,22 @@ const nextConfig = {
       "global-builtin",
     ],
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.corelogic.asia",
+      },
+      {
+        protocol: "https",
+        hostname: "maps.googleapis.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
+      },
+    ],
+  },
 };
 
 module.exports = nextConfig;

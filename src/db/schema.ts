@@ -93,12 +93,17 @@ export type NewVerification = typeof verification.$inferInsert;
 export const property = pgTable('property', {
   id: uuid('id').primaryKey().notNull(),
   userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
-  addressCommonName: text('address_common_name').notNull(),
+  addressCommonName: text('address_common_name').notNull().unique(),
+  // Structured address fields
+  addressLine: text('address_line'),
+  suburb: text('suburb'),
+  state: text('state'),
+  postcode: text('postcode'),
+  // Property details
   bedroomCount: integer('bedroom_count'),
   bathroomCount: integer('bathroom_count'),
   propertyType: text('property_type'),
   landAreaSqm: numeric('land_area_sqm'),
-  propertyImageUrl: text('property_image_url'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
@@ -108,6 +113,26 @@ export const property = pgTable('property', {
 
 export type Property = typeof property.$inferSelect;
 export type NewProperty = typeof property.$inferInsert;
+
+// ============================================================================
+// Property Image Table (1-to-many relationship with property)
+// ============================================================================
+export type PropertyImageType = 'main' | 'gallery' | 'floor_plan' | 'streetview';
+
+export const propertyImage = pgTable('property_image', {
+  id: uuid('id').primaryKey().notNull(),
+  propertyId: uuid('property_id').notNull().references(() => property.id, { onDelete: 'cascade' }),
+  url: text('url').notNull(),
+  type: text('type').notNull().default('gallery').$type<PropertyImageType>(),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  propertyIdIdx: index('idx_property_image_property_id').on(table.propertyId),
+  sortOrderIdx: index('idx_property_image_sort_order').on(table.propertyId, table.sortOrder),
+}));
+
+export type PropertyImage = typeof propertyImage.$inferSelect;
+export type NewPropertyImage = typeof propertyImage.$inferInsert;
 
 // ============================================================================
 // Appraisal Table
@@ -156,11 +181,96 @@ export const propertyRelations = relations(property, ({ one, many }) => ({
     references: [user.id],
   }),
   appraisals: many(appraisal),
+  images: many(propertyImage),
 }));
 
 export const appraisalRelations = relations(appraisal, ({ one }) => ({
   property: one(property, {
     fields: [appraisal.propertyId],
+    references: [property.id],
+  }),
+}));
+
+export const propertyImageRelations = relations(propertyImage, ({ one }) => ({
+  property: one(property, {
+    fields: [propertyImage.propertyId],
+    references: [property.id],
+  }),
+}));
+
+// ============================================================================
+// Checklist Group Table (e.g., "Pest Inspection", "Roof Condition")
+// ============================================================================
+export const checklistGroup = pgTable('checklist_group', {
+  id: uuid('id').primaryKey().notNull(),
+  propertyId: uuid('property_id').notNull().references(() => property.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  propertyIdIdx: index('idx_checklist_group_property_id').on(table.propertyId),
+}));
+
+export type ChecklistGroup = typeof checklistGroup.$inferSelect;
+export type NewChecklistGroup = typeof checklistGroup.$inferInsert;
+
+// ============================================================================
+// Checklist Item Table (e.g., "Rodent Signs", "Mould Inspection")
+// ============================================================================
+export type ChecklistValueType = 'text' | 'number' | 'boolean' | 'date';
+
+export const checklistItem = pgTable('checklist_item', {
+  id: uuid('id').primaryKey().notNull(),
+  groupId: uuid('group_id').notNull().references(() => checklistGroup.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  valueType: text('value_type').notNull().default('text').$type<ChecklistValueType>(),
+  value: text('value'),
+  isCompleted: boolean('is_completed').notNull().default(false),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  groupIdIdx: index('idx_checklist_item_group_id').on(table.groupId),
+}));
+
+export type ChecklistItem = typeof checklistItem.$inferSelect;
+export type NewChecklistItem = typeof checklistItem.$inferInsert;
+
+// Checklist Relations
+export const checklistGroupRelations = relations(checklistGroup, ({ one, many }) => ({
+  property: one(property, {
+    fields: [checklistGroup.propertyId],
+    references: [property.id],
+  }),
+  items: many(checklistItem),
+}));
+
+export const checklistItemRelations = relations(checklistItem, ({ one }) => ({
+  group: one(checklistGroup, {
+    fields: [checklistItem.groupId],
+    references: [checklistGroup.id],
+  }),
+}));
+
+// ============================================================================
+// Property Tag Table (many-to-one with property)
+// ============================================================================
+export const propertyTag = pgTable('property_tag', {
+  id: uuid('id').primaryKey().notNull(),
+  propertyId: uuid('property_id').notNull().references(() => property.id, { onDelete: 'cascade' }),
+  value: text('value').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  propertyIdIdx: index('idx_property_tag_property_id').on(table.propertyId),
+}));
+
+export type PropertyTag = typeof propertyTag.$inferSelect;
+export type NewPropertyTag = typeof propertyTag.$inferInsert;
+
+export const propertyTagRelations = relations(propertyTag, ({ one }) => ({
+  property: one(property, {
+    fields: [propertyTag.propertyId],
     references: [property.id],
   }),
 }));

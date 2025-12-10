@@ -3,9 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/drizzle';
 import { property } from '@/db/schema';
 import { randomUUID } from 'crypto';
-
-// Hardcoded user ID for now until auth is integrated
-const DEFAULT_USER_ID = 'agent-user-001';
+import { getSession } from '@/lib/auth';
 
 /**
  * GET /api/properties
@@ -13,10 +11,18 @@ const DEFAULT_USER_ID = 'agent-user-001';
  */
 export async function GET() {
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { status: 'fail', message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const userProperties = await db
       .select()
       .from(property)
-      .where(eq(property.userId, DEFAULT_USER_ID));
+      .where(eq(property.userId, session.userId));
 
     return NextResponse.json({
       status: 'success',
@@ -37,6 +43,14 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { status: 'fail', message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
     // Validate required fields
@@ -53,13 +67,16 @@ export async function POST(request: NextRequest) {
 
     const newProperty = {
       id: randomUUID(),
-      userId: DEFAULT_USER_ID,
+      userId: session.userId,
       addressCommonName,
+      addressLine: body.addressLine || null,
+      suburb: body.suburb || null,
+      state: body.state || null,
+      postcode: body.postcode || null,
       propertyType: body.propertyType || null,
       bedroomCount: body.bedroomCount || null,
       bathroomCount: body.bathroomCount || null,
       landAreaSqm: body.landAreaSqm || null,
-      propertyImageUrl: body.propertyImageUrl || null,
     };
 
     const [created] = await db.insert(property).values(newProperty as any).returning();

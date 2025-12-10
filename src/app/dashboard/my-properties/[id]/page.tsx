@@ -1,16 +1,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { getPropertyById, getAllPropertyIds } from "@/actions/properties";
+import { getPropertyById } from "@/actions/properties";
+import { getPropertyChecklists } from "@/actions/checklist";
+import { getPropertyTags } from "@/actions/tags";
+import DeletePropertyButton from "@/components/property/DeletePropertyButton";
+import ChecklistManagement from "@/components/property/ChecklistManagement";
+import PropertyTags from "@/components/property/PropertyTags";
 
-// Generate static params for all properties (enables static generation)
-export async function generateStaticParams() {
-  const propertyIds = await getAllPropertyIds();
-  return propertyIds.map((id) => ({ id }));
-}
-
-// Revalidate every 60 seconds
-export const revalidate = 60;
+// Force dynamic rendering to ensure auth cookies are available
+export const dynamic = 'force-dynamic';
 
 // Generate metadata
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -81,6 +80,23 @@ export default async function PropertyDetailPage({
   }
 
   const { appraisals, ...property } = data;
+
+  // Fetch checklists - wrap in try/catch in case tables don't exist yet
+  let initialChecklists = [];
+  try {
+    initialChecklists = await getPropertyChecklists(id);
+  } catch (error) {
+    console.log('Checklist tables may not exist yet:', error);
+  }
+
+  // Fetch tags
+  let initialTags = [];
+  try {
+    initialTags = await getPropertyTags(id);
+  } catch (error) {
+    console.log('Tags table may not exist yet:', error);
+  }
+
   const latestAppraisal = appraisals[0];
   const reportData = latestAppraisal?.data as {
     coverPageData?: { reportDate?: string };
@@ -138,7 +154,7 @@ export default async function PropertyDetailPage({
                 Added {formatDate(property.createdAt)}
               </span>
             </div>
-            <div className="property-meta d-flex align-items-center">
+            <div className="property-meta d-flex align-items-center mb15">
               {property.bedroomCount && (
                 <span className="text fz15">
                   <i className="flaticon-bed pe-2 align-text-top" />
@@ -157,6 +173,10 @@ export default async function PropertyDetailPage({
                   {property.landAreaSqm} sqm
                 </span>
               )}
+            </div>
+            {/* Property Tags */}
+            <div className="property-tags">
+              <PropertyTags propertyId={id} initialTags={initialTags} />
             </div>
           </div>
         </div>
@@ -200,9 +220,9 @@ export default async function PropertyDetailPage({
           <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 overflow-hidden position-relative">
             <div className="row">
               <div className="col-md-8">
-                {property.propertyImageUrl ? (
+                {property.mainImageUrl ? (
                   <Image
-                    src={property.propertyImageUrl}
+                    src={property.mainImageUrl}
                     alt={property.addressCommonName}
                     width={800}
                     height={500}
@@ -359,6 +379,28 @@ export default async function PropertyDetailPage({
               </div>
             </div>
           )}
+
+          {/* Checklist Management */}
+          <ChecklistManagement
+            propertyId={id}
+            initialGroups={initialChecklists}
+          />
+
+          {/* Danger Zone */}
+          <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
+            <h4 className="title fz17 mb20 text-danger">
+              <i className="fas fa-exclamation-triangle me-2"></i>
+              Danger Zone
+            </h4>
+            <p className="text-muted mb20">
+              Once you delete a property, there is no going back. All associated
+              appraisal reports will also be permanently deleted.
+            </p>
+            <DeletePropertyButton
+              propertyId={id}
+              propertyName={property.addressCommonName}
+            />
+          </div>
         </div>
       </div>
     </>
