@@ -78,9 +78,8 @@ const DashboardHeader = () => {
                   <div
                     className="dashboard_header_logo position-relative me-2 me-xl-5"
                     style={{
-                      width: isCollapsed ? 40 : undefined,
+                      width: isCollapsed ? 44 : undefined,
                       overflow: "hidden",
-                      transition: "width 0.3s ease",
                     }}
                   >
                     <Link className="logo" href="/">
@@ -172,21 +171,25 @@ const DashboardHeader = () => {
                                 >
                                   {section.title}
                                 </p>
-                                {section.items.map((item, itemIndex) => (
-                                  <Link
-                                    key={itemIndex}
-                                    className={`dropdown-item ${
-                                      pathname === item.href ||
-                                      pathname.startsWith(item.href + "/")
-                                        ? "-is-active"
-                                        : ""
-                                    }`}
-                                    href={item.href}
-                                  >
-                                    <i className={`${item.icon} mr10`} />
-                                    {item.text}
-                                  </Link>
-                                ))}
+                                {section.items.map((item, itemIndex) => {
+                                  const isActive = item.href === "/dashboard"
+                                    ? pathname === "/dashboard"
+                                    : pathname === item.href || pathname.startsWith(item.href + "/");
+                                  return (
+                                    <Link
+                                      key={itemIndex}
+                                      className="dropdown-item"
+                                      href={item.href}
+                                      style={isActive ? {
+                                        backgroundColor: "#f0f0f0",
+                                        borderRadius: 8,
+                                      } : undefined}
+                                    >
+                                      <i className={`${item.icon} mr10`} />
+                                      {item.text}
+                                    </Link>
+                                  );
+                                })}
                               </div>
                             ))}
                             {/* Logout */}

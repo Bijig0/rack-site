@@ -17,7 +17,7 @@ export default function DashboardMainContent({ children }: DashboardMainContentP
         flex: 1,
         marginLeft: isCollapsed ? -170 : 0,
         width: isCollapsed ? "calc(100% + 170px)" : "100%",
-        transition: "all 0.3s ease",
+        transition: "all 0.6s cubic-bezier(0.215, 0.61, 0.355, 1)",
       }}
     >
       <div className="dashboard__content bgc-f7">

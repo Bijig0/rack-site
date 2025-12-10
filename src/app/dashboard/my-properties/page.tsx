@@ -57,7 +57,7 @@ function PropertyCard({ property }: { property: PropertyWithAppraisal }) {
         style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}
       >
         {/* Three dots menu */}
-        <div className="dropdown position-absolute" style={{ top: 16, right: 16, zIndex: 10 }}>
+        <div className="dropdown position-absolute" style={{ top: 16, right: 16, zIndex: 1 }}>
           <button
             className="btn p-0 three-dots-menu"
             type="button"

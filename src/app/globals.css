@@ -127,3 +127,18 @@
 .sidebar-collapsed .sidebar_list_item a.-is-active i::before {
   color: #fff !important;
 }
+
+/* Sidebar section dividers - hidden by default, shown when collapsed */
+.dashboard_sidebar_list .sidebar-divider {
+  height: 1px !important;
+  min-height: 1px !important;
+  background-color: #ccc !important;
+  margin: 12px 4px !important;
+  display: block !important;
+  opacity: 0;
+  transition: opacity 0.6s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.sidebar-collapsed .dashboard_sidebar_list .sidebar-divider {
+  opacity: 1;
+}

@@ -81,8 +81,8 @@ const SidebarDashboard = () => {
       style={{
         width: isCollapsed ? 80 : undefined,
         minWidth: isCollapsed ? 80 : undefined,
-        transition: "all 0.3s ease",
         overflow: isCollapsed ? "visible" : undefined,
+        transition: "all 0.6s cubic-bezier(0.215, 0.61, 0.355, 1)",
       }}
     >
       <div
@@ -102,14 +102,8 @@ const SidebarDashboard = () => {
                 {section.title}
               </p>
             )}
-            {isCollapsed && sectionIndex > 0 && (
-              <div
-                style={{
-                  height: 1,
-                  backgroundColor: "#e0e0e0",
-                  margin: "12px 8px",
-                }}
-              />
+            {sectionIndex > 0 && (
+              <div className="sidebar-divider" />
             )}
             {section.items.map((item, itemIndex) => (
               <div key={itemIndex} className="sidebar_list_item">
@@ -128,15 +122,7 @@ const SidebarDashboard = () => {
         ))}
 
         {/* Logout button */}
-        {isCollapsed && (
-          <div
-            style={{
-              height: 1,
-              backgroundColor: "#e0e0e0",
-              margin: "12px 8px",
-            }}
-          />
-        )}
+        <div className="sidebar-divider" />
         <div className="sidebar_list_item" style={{ marginTop: isCollapsed ? 0 : undefined }}>
           <a
             href="#"
