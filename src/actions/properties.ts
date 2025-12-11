@@ -179,44 +179,34 @@ export async function getUserPropertyCount(): Promise<number> {
 }
 
 /**
- * Internal function to fetch single property
+ * Internal function to fetch single property with all related data
+ * Uses a single query with JOINs for optimal performance
  */
 async function fetchPropertyById(propertyId: string) {
-  const properties = await db
-    .select()
-    .from(property)
-    .where(eq(property.id, propertyId))
-    .limit(1);
+  // Single query that fetches property with all appraisals and images
+  const result = await db.query.property.findFirst({
+    where: eq(property.id, propertyId),
+    with: {
+      appraisals: {
+        orderBy: (appraisal, { desc }) => [desc(appraisal.createdAt)],
+      },
+      images: {
+        orderBy: (propertyImage, { asc }) => [asc(propertyImage.sortOrder)],
+      },
+    },
+  });
 
-  if (properties.length === 0) {
+  if (!result) {
     return null;
   }
 
-  const prop = properties[0];
-
-  // Get all appraisals for the property
-  const appraisals = await db
-    .select()
-    .from(appraisal)
-    .where(eq(appraisal.propertyId, propertyId))
-    .orderBy(desc(appraisal.createdAt));
-
-  // Get all images for the property
-  const images = await db
-    .select()
-    .from(propertyImage)
-    .where(eq(propertyImage.propertyId, propertyId))
-    .orderBy(propertyImage.sortOrder);
-
   // Get the main image URL
-  const mainImage = images.find(img => img.type === 'main');
+  const mainImage = result.images.find(img => img.type === 'main');
   const mainImageUrl = mainImage?.url || null;
 
   return {
-    ...prop,
+    ...result,
     mainImageUrl,
-    images,
-    appraisals,
   };
 }
 
