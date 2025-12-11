@@ -96,8 +96,27 @@ export function PropertyJobsProvider({ children }: { children: ReactNode }) {
       for (const job of activePendingJobs) {
         try {
           // statusUrl is a relative URL to our Next.js proxy (e.g., /api/properties/jobs/123)
-          const response = await fetch(job.statusUrl);
+          const response = await fetch(job.statusUrl, {
+            credentials: 'include', // Include cookies for authentication
+          });
           const data = await response.json();
+
+          // Log for debugging
+          console.log(`[PropertyJobs] Job ${job.jobId} poll response:`, response.status, JSON.stringify(data));
+
+          // Handle HTTP errors
+          if (!response.ok) {
+            console.error(`[PropertyJobs] HTTP error for job ${job.jobId}:`, response.status, data);
+            setPendingJobs((prev) =>
+              prev.map((j) =>
+                j.jobId === job.jobId
+                  ? { ...j, status: "error", error: data.error || data.message || `HTTP ${response.status}` }
+                  : j
+              )
+            );
+            showToast("error", `Failed to create property "${job.addressCommonName}": ${data.error || data.message || `Server error (${response.status})`}`);
+            continue;
+          }
 
           // BullMQ returns: waiting, active, completed, failed, delayed, paused
           // Our API returns "success" on completed jobs after creating the property record
