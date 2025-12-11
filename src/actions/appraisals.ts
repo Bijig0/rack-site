@@ -106,13 +106,20 @@ export async function deleteAppraisal(appraisalId: string): Promise<{ success: b
       return { success: false, error: 'Not authorized to delete this appraisal' };
     }
 
+    // Get the property ID for path revalidation
+    const propertyId = appraisalRecord[0].propertyId;
+
     // Delete the appraisal
     await db.delete(appraisal).where(eq(appraisal.id, appraisalId));
 
     // Revalidate cache
-    const { revalidateTag } = await import('next/cache');
+    const { revalidateTag, revalidatePath } = await import('next/cache');
     revalidateTag('appraisals');
     revalidateTag('properties');
+    // Also revalidate the specific property page path
+    revalidatePath(`/dashboard/my-properties/${propertyId}`);
+    revalidatePath('/dashboard/appraisal-reports');
+    revalidatePath('/dashboard');
 
     return { success: true };
   } catch (error) {

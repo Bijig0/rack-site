@@ -221,22 +221,34 @@ async function fetchPropertyById(propertyId: string) {
 }
 
 /**
- * Cached version of getPropertyById
+ * Create a cached version for a specific property ID
+ * The key includes the propertyId to ensure each property has its own cache entry
  */
-const getCachedPropertyById = unstable_cache(
-  async (propertyId: string) => fetchPropertyById(propertyId),
-  ['property-by-id'],
-  {
-    revalidate: 60,
-    tags: ['properties']
-  }
-);
+function createCachedPropertyFetcher(propertyId: string) {
+  return unstable_cache(
+    async () => fetchPropertyById(propertyId),
+    ['property-by-id', propertyId],
+    {
+      revalidate: 60,
+      tags: ['properties', `property-${propertyId}`]
+    }
+  );
+}
+
+/**
+ * Request-level cache to dedupe multiple calls in the same render
+ */
+const getRequestCachedPropertyById = cache(async (propertyId: string) => {
+  const cachedFetcher = createCachedPropertyFetcher(propertyId);
+  return cachedFetcher();
+});
 
 /**
  * Get a single property by ID (cached)
+ * Uses both request-level cache and persistent cache for instant loads
  */
 export async function getPropertyById(propertyId: string) {
-  return getCachedPropertyById(propertyId);
+  return getRequestCachedPropertyById(propertyId);
 }
 
 /**
