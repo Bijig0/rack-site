@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { isProduction as checkIsProduction } from '@/lib/config';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -12,8 +13,6 @@ interface Logger {
   warn: (message: string, context?: LogContext) => void;
   error: (message: string, error?: Error | unknown, context?: LogContext) => void;
 }
-
-const isProduction = process.env.NODE_ENV === 'production';
 
 /**
  * Format log message with timestamp and level
@@ -39,7 +38,7 @@ function serializeContext(context?: LogContext): string {
  * Add breadcrumb to Sentry for tracing
  */
 function addBreadcrumb(level: LogLevel, message: string, context?: LogContext) {
-  if (isProduction) {
+  if (checkIsProduction()) {
     Sentry.addBreadcrumb({
       category: 'log',
       message,
@@ -62,7 +61,7 @@ function addBreadcrumb(level: LogLevel, message: string, context?: LogContext) {
  */
 export const logger: Logger = {
   debug(message: string, context?: LogContext) {
-    if (!isProduction) {
+    if (!checkIsProduction()) {
       console.debug(formatMessage('debug', message) + serializeContext(context));
     }
     // Debug logs are not sent to Sentry in production
@@ -71,7 +70,7 @@ export const logger: Logger = {
   info(message: string, context?: LogContext) {
     const formattedMessage = formatMessage('info', message);
 
-    if (isProduction) {
+    if (checkIsProduction()) {
       // In production, use structured logging format
       console.log(JSON.stringify({
         level: 'info',
@@ -89,7 +88,7 @@ export const logger: Logger = {
   warn(message: string, context?: LogContext) {
     const formattedMessage = formatMessage('warn', message);
 
-    if (isProduction) {
+    if (checkIsProduction()) {
       console.warn(JSON.stringify({
         level: 'warn',
         message,
@@ -111,7 +110,7 @@ export const logger: Logger = {
 
     const fullContext = { ...context, ...errorDetails };
 
-    if (isProduction) {
+    if (checkIsProduction()) {
       console.error(JSON.stringify({
         level: 'error',
         message,

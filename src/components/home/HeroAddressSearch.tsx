@@ -1,90 +1,191 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { env } from "@/lib/config";
 
-const MAPBOX_TOKEN = "pk.eyJ1IjoiYmlqaWcwIiwiYSI6ImNtaXRjNjQ2bjFtbXozZ29id2FrN2w5aTgifQ.wQhNlZC8qZq4uxpI3fLauw";
+const GOOGLE_MAPS_API_KEY = env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-interface MapboxSuggestion {
-  id: string;
-  name: string;
-  full_address: string;
-}
+// Track if Google Maps script is loaded globally
+let googleMapsLoaded = false;
+let googleMapsLoading = false;
+const loadCallbacks: Array<() => void> = [];
 
-export default function HeroAddressSearch() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<MapboxSuggestion[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
-
-  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  // Close suggestions when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const searchAddress = useCallback(async (query: string) => {
-    if (query.length < 3) {
-      setSuggestions([]);
+function loadGoogleMapsScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (googleMapsLoaded || window.google?.maps?.places) {
+      googleMapsLoaded = true;
+      resolve();
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(query)}&country=au&types=address&access_token=${MAPBOX_TOKEN}`
-      );
-      const data = await response.json();
-
-      if (data.features) {
-        setSuggestions(
-          data.features.map((f: any) => ({
-            id: f.id,
-            name: f.properties.name,
-            full_address: f.properties.full_address,
-          }))
-        );
-        setShowSuggestions(true);
-      }
-    } catch (error) {
-      console.error("Error fetching address suggestions:", error);
-    } finally {
-      setIsLoading(false);
+    if (googleMapsLoading) {
+      loadCallbacks.push(() => resolve());
+      return;
     }
+
+    googleMapsLoading = true;
+
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+
+    script.onload = () => {
+      googleMapsLoaded = true;
+      googleMapsLoading = false;
+      loadCallbacks.forEach((cb) => cb());
+      loadCallbacks.length = 0;
+      resolve();
+    };
+
+    script.onerror = () => {
+      googleMapsLoading = false;
+      reject(new Error("Failed to load Google Maps script"));
+    };
+
+    document.head.appendChild(script);
+  });
+}
+
+// Clean up pac-container elements created by Google Maps
+function cleanupPacContainers() {
+  const pacContainers = document.querySelectorAll(".pac-container");
+  pacContainers.forEach((container) => container.remove());
+}
+
+export default function HeroAddressSearch() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const isMountedRef = useRef(true);
+
+  // Load Google Maps script
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    if (!GOOGLE_MAPS_API_KEY) {
+      console.error("Google Maps API key is not configured");
+      setIsLoading(false);
+      return;
+    }
+
+    loadGoogleMapsScript()
+      .then(() => {
+        if (isMountedRef.current) {
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        if (isMountedRef.current) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMountedRef.current = false;
+      // Clean up autocomplete on unmount
+      if (autocompleteRef.current) {
+        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
+      }
+      // Clean up pac-container elements
+      cleanupPacContainers();
+    };
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    setSelectedAddress(null);
-
-    // Debounce the search
-    if (searchTimeout.current) {
-      clearTimeout(searchTimeout.current);
+  // Initialize autocomplete when Google Maps is loaded and input is ready
+  useEffect(() => {
+    if (isLoading || !inputRef.current || !window.google?.maps?.places) {
+      return;
     }
-    searchTimeout.current = setTimeout(() => {
-      searchAddress(value);
-    }, 300);
-  };
 
-  const selectSuggestion = (suggestion: MapboxSuggestion) => {
-    setSearchQuery(suggestion.full_address);
-    setSelectedAddress(suggestion.full_address);
-    setShowSuggestions(false);
-  };
+    // Prevent re-initialization
+    if (autocompleteRef.current) {
+      return;
+    }
+
+    const input = inputRef.current;
+    const autocomplete = new window.google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: "au" },
+      types: ["address"],
+      fields: ["formatted_address", "address_components", "geometry"],
+    });
+
+    // Prevent form submission when pressing Enter on autocomplete selection
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        const pacContainer = document.querySelector(".pac-container");
+        if (pacContainer && pacContainer.querySelector(".pac-item-selected")) {
+          e.preventDefault();
+        }
+      }
+    };
+    input.addEventListener("keydown", handleKeyDown);
+
+    autocomplete.addListener("place_changed", () => {
+      if (!isMountedRef.current) return;
+
+      const place = autocomplete.getPlace();
+
+      if (!place.formatted_address) {
+        return;
+      }
+
+      setSearchQuery(place.formatted_address);
+      setSelectedAddress(place.formatted_address);
+    });
+
+    autocompleteRef.current = autocomplete;
+
+    return () => {
+      // Remove keydown listener
+      input.removeEventListener("keydown", handleKeyDown);
+      // Clean up autocomplete listeners
+      if (autocompleteRef.current) {
+        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
+      }
+    };
+  }, [isLoading]);
 
   const handleGenerateReport = () => {
-    // TODO: Implement report generation logic
-    console.log("Generate report for:", selectedAddress);
+    if (selectedAddress) {
+      // Navigate to the add property page with the address pre-filled
+      const encodedAddress = encodeURIComponent(selectedAddress);
+      router.push(`/dashboard/add-property?address=${encodedAddress}`);
+    }
   };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    // Clear selection if user types
+    if (selectedAddress && e.target.value !== selectedAddress) {
+      setSelectedAddress(null);
+    }
+  };
+
+  if (!GOOGLE_MAPS_API_KEY) {
+    return (
+      <div
+        className="d-flex align-items-center justify-content-center"
+        style={{
+          backgroundColor: "#fff",
+          borderRadius: 16,
+          padding: "20px",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+        }}
+      >
+        <span className="text-muted">Address search is not available</span>
+      </div>
+    );
+  }
 
   return (
     <div ref={wrapperRef} className="position-relative">
@@ -103,11 +204,12 @@ export default function HeroAddressSearch() {
             style={{ color: "#eb6753", fontSize: 18, marginRight: 12, flexShrink: 0 }}
           />
           <input
+            ref={inputRef}
             type="text"
-            placeholder="Enter property address..."
+            placeholder={isLoading ? "Loading..." : "Enter property address..."}
             value={searchQuery}
             onChange={handleInputChange}
-            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+            disabled={isLoading}
             autoComplete="off"
             style={{
               border: "none",
@@ -142,36 +244,6 @@ export default function HeroAddressSearch() {
           <i className="fal fa-arrow-right-long ms-2" />
         </button>
       </div>
-
-      {/* Suggestions Dropdown */}
-      {showSuggestions && suggestions.length > 0 && (
-        <div
-          className="position-absolute w-100 mt-2 bg-white rounded-3 shadow-lg"
-          style={{
-            maxHeight: 300,
-            overflowY: "auto",
-            zIndex: 100,
-            border: "1px solid #e0e0e0",
-          }}
-        >
-          {suggestions.map((suggestion) => (
-            <button
-              key={suggestion.id}
-              type="button"
-              className="d-flex flex-column w-100 text-start p-3 border-0 bg-transparent"
-              onClick={() => selectSuggestion(suggestion)}
-              style={{ cursor: "pointer", transition: "background-color 0.15s" }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-            >
-              <span className="fw500" style={{ color: "#222" }}>
-                {suggestion.name}
-              </span>
-              <small style={{ color: "#666" }}>{suggestion.full_address}</small>
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

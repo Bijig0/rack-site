@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next';
+import { env } from '@/lib/config';
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://rack.com.au';
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL;
 
   return {
     rules: [

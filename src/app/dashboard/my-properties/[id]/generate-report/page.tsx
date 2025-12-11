@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { revalidateProperties, getPropertyById } from "@/actions/properties";
 import { getUserProfile, type UserProfile } from "@/actions/user";
 import { useReportJobs } from "@/context/ReportJobsContext";
+import { env } from "@/lib/config";
 
 /**
  * Report Job Status Constants - mirrors the server-side ReportJobStatus
@@ -155,7 +156,7 @@ export default function GenerateReportPage({
 
   // Core generation logic (can be called for initial attempt or retry)
   const executeGeneration = useCallback(async (currentAttempt: number): Promise<void> => {
-    const dedicatedServerUrl = process.env.NEXT_PUBLIC_DEDICATED_SERVER_URL || "http://localhost:3000";
+    const dedicatedServerUrl = env.NEXT_PUBLIC_DEDICATED_SERVER_URL || "http://localhost:3000";
 
     // Use cached property data if available
     let propertyData = propertyDataRef.current;

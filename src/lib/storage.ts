@@ -5,39 +5,23 @@ import {
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { storageConfig, isStorageConfigured as checkStorageConfigured } from '@/lib/config';
 
-// Storage configuration from environment variables
-const config = {
-  endpoint: process.env.STORAGE_ENDPOINT || '',
-  region: process.env.STORAGE_REGION || 'us-east-1',
-  bucket: process.env.STORAGE_BUCKET || '',
-  accessKeyId: process.env.STORAGE_ACCESS_KEY_ID || '',
-  secretAccessKey: process.env.STORAGE_SECRET_ACCESS_KEY || '',
-  publicUrl: process.env.STORAGE_PUBLIC_URL || '', // CDN or public bucket URL
-};
-
-// Validate configuration
-export function isStorageConfigured(): boolean {
-  return !!(
-    config.endpoint &&
-    config.bucket &&
-    config.accessKeyId &&
-    config.secretAccessKey
-  );
-}
+// Re-export the config check function
+export const isStorageConfigured = checkStorageConfigured;
 
 // Create S3 client (works with any S3-compatible storage like Railway, MinIO, Cloudflare R2, etc.)
 function getS3Client(): S3Client {
-  if (!isStorageConfigured()) {
+  if (!checkStorageConfigured()) {
     throw new Error('Storage is not configured. Please set the required environment variables.');
   }
 
   return new S3Client({
-    endpoint: config.endpoint,
-    region: config.region,
+    endpoint: storageConfig.endpoint,
+    region: storageConfig.region,
     credentials: {
-      accessKeyId: config.accessKeyId,
-      secretAccessKey: config.secretAccessKey,
+      accessKeyId: storageConfig.accessKeyId,
+      secretAccessKey: storageConfig.secretAccessKey,
     },
     forcePathStyle: true, // Required for most S3-compatible services
   });
@@ -64,7 +48,7 @@ export async function getPresignedReadUrl(key: string, expiresIn: number = 60480
   const client = getS3Client();
 
   const command = new GetObjectCommand({
-    Bucket: config.bucket,
+    Bucket: storageConfig.bucket,
     Key: key,
   });
 
@@ -74,23 +58,23 @@ export async function getPresignedReadUrl(key: string, expiresIn: number = 60480
 
 // Get the public URL for a file (deprecated for Railway - use getPresignedReadUrl instead)
 export function getPublicUrl(key: string): string {
-  if (config.publicUrl) {
+  if (storageConfig.publicUrl) {
     // Use CDN or custom public URL
-    return `${config.publicUrl}/${key}`;
+    return `${storageConfig.publicUrl}/${key}`;
   }
   // Fallback to direct endpoint URL
   // For Railway Object Storage, the public URL format is: https://{bucket}.{endpoint-host}/{key}
   // e.g., https://pdfs-urro8dpjdf-cxa59g-ro.storage.railway.app/file.pdf
   try {
-    const endpointUrl = new URL(config.endpoint);
+    const endpointUrl = new URL(storageConfig.endpoint);
     // Check if this looks like Railway storage
     if (endpointUrl.hostname === 'storage.railway.app') {
-      return `https://${config.bucket}.storage.railway.app/${key}`;
+      return `https://${storageConfig.bucket}.storage.railway.app/${key}`;
     }
   } catch {
     // If URL parsing fails, fall through to default
   }
-  return `${config.endpoint}/${config.bucket}/${key}`;
+  return `${storageConfig.endpoint}/${storageConfig.bucket}/${key}`;
 }
 
 // Upload a file to storage
@@ -104,7 +88,7 @@ export async function uploadFile(
 
   // Upload without ACL (Railway doesn't support public buckets)
   const command = new PutObjectCommand({
-    Bucket: config.bucket,
+    Bucket: storageConfig.bucket,
     Key: key,
     Body: file,
     ContentType: contentType,
@@ -127,7 +111,7 @@ export async function deleteFile(key: string): Promise<void> {
   const client = getS3Client();
 
   const command = new DeleteObjectCommand({
-    Bucket: config.bucket,
+    Bucket: storageConfig.bucket,
     Key: key,
   });
 
@@ -143,7 +127,7 @@ export async function generatePresignedUploadUrl(
   const client = getS3Client();
 
   const command = new PutObjectCommand({
-    Bucket: config.bucket,
+    Bucket: storageConfig.bucket,
     Key: key,
     ContentType: contentType,
     ACL: 'public-read',
@@ -161,18 +145,18 @@ export async function generatePresignedUploadUrl(
 export function extractKeyFromUrl(url: string): string | null {
   try {
     // Try to extract key from the URL
-    if (config.publicUrl && url.startsWith(config.publicUrl)) {
-      return url.substring(config.publicUrl.length + 1);
+    if (storageConfig.publicUrl && url.startsWith(storageConfig.publicUrl)) {
+      return url.substring(storageConfig.publicUrl.length + 1);
     }
 
     // Try Railway format: https://{bucket}.storage.railway.app/{key}
-    const railwayPrefix = `https://${config.bucket}.storage.railway.app/`;
+    const railwayPrefix = `https://${storageConfig.bucket}.storage.railway.app/`;
     if (url.startsWith(railwayPrefix)) {
       return url.substring(railwayPrefix.length);
     }
 
     // Try endpoint format (legacy): https://storage.railway.app/{bucket}/{key}
-    const endpointPrefix = `${config.endpoint}/${config.bucket}/`;
+    const endpointPrefix = `${storageConfig.endpoint}/${storageConfig.bucket}/`;
     if (url.startsWith(endpointPrefix)) {
       return url.substring(endpointPrefix.length);
     }
@@ -195,8 +179,7 @@ export function isValidImageType(contentType: string): boolean {
   return validTypes.includes(contentType.toLowerCase());
 }
 
-// Get max file size in bytes (default 10MB)
+// Get max file size in bytes
 export function getMaxFileSize(): number {
-  const maxMB = parseInt(process.env.STORAGE_MAX_FILE_SIZE_MB || '10', 10);
-  return maxMB * 1024 * 1024;
+  return storageConfig.maxFileSizeBytes;
 }

@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
+// Note: Middleware runs on Edge runtime and cannot import the full config module.
+// JWT_SECRET is validated at server startup via config.ts, so this will fail
+// appropriately if the env var is not set.
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key-min-32-chars-long!'
+  process.env.JWT_SECRET!
 );
 
 // Routes that require authentication

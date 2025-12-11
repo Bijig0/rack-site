@@ -7,8 +7,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Metadata } from "next";
 import { Suspense } from "react";
+import { env } from "@/lib/config";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://rack.com.au";
+const siteUrl = env.NEXT_PUBLIC_SITE_URL;
 const siteName = "Rack - Rental Appraisal Report Generator";
 
 export const metadata: Metadata = {
@@ -76,7 +77,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION,
+    google: env.GOOGLE_SITE_VERIFICATION,
   },
 };
 

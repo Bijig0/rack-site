@@ -10,6 +10,7 @@ import { sanityClient, urlFor } from '@/lib/sanity/client';
 import { postBySlugQuery, postSlugsQuery } from '@/lib/sanity/queries';
 import { portableTextComponents } from '@/components/blog/PortableTextComponents';
 import type { Post } from '@/lib/sanity/types';
+import { env } from '@/lib/config';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: 'Post Not Found' };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://rack.com.au';
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL;
   const ogImage = post.mainImage
     ? urlFor(post.mainImage).width(1200).height(630).url()
     : `${siteUrl}/images/og-image.png`;
@@ -73,7 +74,7 @@ export default async function BlogPostPage({ params }: Props) {
     notFound();
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://rack.com.au';
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL;
 
   // JSON-LD structured data for the article
   const jsonLd = {

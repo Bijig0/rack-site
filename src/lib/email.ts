@@ -1,14 +1,22 @@
 import nodemailer from 'nodemailer';
+import { env, isEmailConfigured } from '@/lib/config';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: parseInt(process.env.EMAIL_PORT || '587'),
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USERNAME,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
+// Create transporter lazily to avoid errors if email is not configured
+function getTransporter() {
+  if (!isEmailConfigured()) {
+    throw new Error('Email is not configured. Please set EMAIL_HOST, EMAIL_USERNAME, and EMAIL_PASSWORD.');
+  }
+
+  return nodemailer.createTransport({
+    host: env.EMAIL_HOST,
+    port: env.EMAIL_PORT,
+    secure: false,
+    auth: {
+      user: env.EMAIL_USERNAME,
+      pass: env.EMAIL_PASSWORD,
+    },
+  });
+}
 
 interface SendEmailOptions {
   to: string;
@@ -17,8 +25,9 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail({ to, subject, html }: SendEmailOptions): Promise<void> {
+  const transporter = getTransporter();
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM || process.env.EMAIL_USERNAME,
+    from: env.EMAIL_FROM || env.EMAIL_USERNAME,
     to,
     subject,
     html,

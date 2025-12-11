@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { sanityClient } from '@/lib/sanity/client';
+import { env } from '@/lib/config';
 
 interface SanityPost {
   slug: { current: string };
@@ -7,7 +8,7 @@ interface SanityPost {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://rack.com.au';
+  const siteUrl = env.NEXT_PUBLIC_SITE_URL;
 
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [

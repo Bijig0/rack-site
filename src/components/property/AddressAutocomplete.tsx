@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { AddressSchema, parseGooglePlacesAddress, type Address, type AustralianState } from "@/lib/address-schema";
 import { ZodError } from "zod";
+import { env } from "@/lib/config";
 
-const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyDb93Ppqj_Q423e2VRrWmaJ0tG4mCvi2Qs";
+const GOOGLE_MAPS_API_KEY = env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 interface AddressAutocompleteProps {
   onAddressChange: (address: Address | null, addressCommonName: string) => void;
@@ -131,14 +132,15 @@ export default function AddressAutocomplete({ onAddressChange, initialAddress }:
     });
 
     // Prevent form submission when pressing Enter on autocomplete selection
-    input.addEventListener("keydown", (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter") {
         const pacContainer = document.querySelector(".pac-container");
         if (pacContainer && pacContainer.querySelector(".pac-item-selected")) {
           e.preventDefault();
         }
       }
-    });
+    };
+    input.addEventListener("keydown", handleKeyDown);
 
     autocomplete.addListener("place_changed", () => {
       if (!isMountedRef.current) return;
@@ -161,6 +163,9 @@ export default function AddressAutocomplete({ onAddressChange, initialAddress }:
     autocompleteRef.current = autocomplete;
 
     return () => {
+      // Remove keydown listener
+      input.removeEventListener("keydown", handleKeyDown);
+      // Clean up autocomplete listeners
       if (autocompleteRef.current) {
         google.maps.event.clearInstanceListeners(autocompleteRef.current);
         autocompleteRef.current = null;

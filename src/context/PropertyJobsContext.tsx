@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { ToastContainer, ToastMessage } from "@/components/common/Toast";
 import { revalidateProperties } from "@/actions/properties";
@@ -30,6 +30,15 @@ export function PropertyJobsProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const router = useRouter();
 
+  // Use refs to avoid stale closures in polling interval
+  const pendingJobsRef = useRef<PendingJob[]>([]);
+  const isPollingRef = useRef(false);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    pendingJobsRef.current = pendingJobs;
+  }, [pendingJobs]);
+
   // Load pending jobs from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -56,15 +65,34 @@ export function PropertyJobsProvider({ children }: { children: ReactNode }) {
     }
   }, [pendingJobs]);
 
-  // Poll pending jobs
+  // Poll pending jobs - use ref to avoid recreating interval on every state change
   useEffect(() => {
-    const activePendingJobs = pendingJobs.filter(
+    // Check if there are active jobs to poll
+    const hasActiveJobs = pendingJobs.some(
       (j) => j.status === "pending" || j.status === "processing"
     );
 
-    if (activePendingJobs.length === 0) return;
+    if (!hasActiveJobs) {
+      // No active jobs, ensure polling is stopped
+      isPollingRef.current = false;
+      return;
+    }
+
+    // Prevent multiple polling loops
+    if (isPollingRef.current) return;
+    isPollingRef.current = true;
 
     const pollInterval = setInterval(async () => {
+      // Get current active jobs from ref (always fresh)
+      const activePendingJobs = pendingJobsRef.current.filter(
+        (j) => j.status === "pending" || j.status === "processing"
+      );
+
+      // Stop polling if no active jobs
+      if (activePendingJobs.length === 0) {
+        return;
+      }
+
       for (const job of activePendingJobs) {
         try {
           // statusUrl is a relative URL to our Next.js proxy (e.g., /api/properties/jobs/123)
@@ -86,7 +114,6 @@ export function PropertyJobsProvider({ children }: { children: ReactNode }) {
             await revalidateProperties();
 
             // Trigger a client-side refresh to update any server components
-            // This fixes the dashboard skeleton stuck issue
             router.refresh();
 
             // Remove the job after a short delay
@@ -128,8 +155,13 @@ export function PropertyJobsProvider({ children }: { children: ReactNode }) {
       }
     }, 2000); // Poll every 2 seconds
 
-    return () => clearInterval(pollInterval);
-  }, [pendingJobs, router]);
+    return () => {
+      clearInterval(pollInterval);
+      isPollingRef.current = false;
+    };
+    // Only re-run when hasActiveJobs changes (not on every pendingJobs change)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingJobs.some((j) => j.status === "pending" || j.status === "processing")]);
 
   const addJob = useCallback((job: Omit<PendingJob, "status">) => {
     setPendingJobs((prev) => [...prev, { ...job, status: "pending" }]);

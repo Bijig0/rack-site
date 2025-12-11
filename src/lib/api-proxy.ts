@@ -4,9 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-
-const DEDICATED_SERVER_URL = process.env.DEDICATED_SERVER_URL;
-const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
+import { env, isDevelopment } from '@/lib/config';
 
 export interface ProxyOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -21,10 +19,10 @@ export async function proxyToServer(
   path: string,
   options: ProxyOptions = {}
 ): Promise<Response> {
-  if (!DEDICATED_SERVER_URL) {
+  if (!env.DEDICATED_SERVER_URL) {
     throw new Error('DEDICATED_SERVER_URL environment variable is not configured');
   }
-  if (!INTERNAL_API_KEY) {
+  if (!env.INTERNAL_API_KEY) {
     throw new Error('INTERNAL_API_KEY environment variable is not configured');
   }
 
@@ -33,11 +31,11 @@ export async function proxyToServer(
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
-    const response = await fetch(`${DEDICATED_SERVER_URL}${path}`, {
+    const response = await fetch(`${env.DEDICATED_SERVER_URL}${path}`, {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'X-Internal-Api-Key': INTERNAL_API_KEY,
+        'X-Internal-Api-Key': env.INTERNAL_API_KEY,
       },
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
@@ -98,13 +96,12 @@ export function createProxyErrorResponse(
   }
 
   const message = error instanceof Error ? error.message : 'Unknown error';
-  const isDev = process.env.NODE_ENV === 'development';
 
   return NextResponse.json(
     {
       status: 'fail',
       message: 'Failed to connect to report service',
-      ...(isDev && { error: message }),
+      ...(isDevelopment() && { error: message }),
     },
     { status: 502 }
   );

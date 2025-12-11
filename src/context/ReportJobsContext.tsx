@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { revalidateProperties } from "@/actions/properties";
 
@@ -32,6 +32,15 @@ export function ReportJobsProvider({ children }: { children: ReactNode }) {
   const [reportJobs, setReportJobs] = useState<ReportJob[]>([]);
   const router = useRouter();
 
+  // Use refs to avoid stale closures in polling interval
+  const reportJobsRef = useRef<ReportJob[]>([]);
+  const isPollingRef = useRef(false);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    reportJobsRef.current = reportJobs;
+  }, [reportJobs]);
+
   // Load pending jobs from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -61,15 +70,33 @@ export function ReportJobsProvider({ children }: { children: ReactNode }) {
     }
   }, [reportJobs]);
 
-  // Poll active jobs for status updates
+  // Poll active jobs for status updates - use ref to avoid recreating interval on every state change
   useEffect(() => {
-    const activeJobs = reportJobs.filter(
+    const hasActiveJobs = reportJobs.some(
       (j) => j.status === "pending" || j.status === "processing"
     );
 
-    if (activeJobs.length === 0) return;
+    if (!hasActiveJobs) {
+      // No active jobs, ensure polling is stopped
+      isPollingRef.current = false;
+      return;
+    }
+
+    // Prevent multiple polling loops
+    if (isPollingRef.current) return;
+    isPollingRef.current = true;
 
     const pollInterval = setInterval(async () => {
+      // Get current active jobs from ref (always fresh)
+      const activeJobs = reportJobsRef.current.filter(
+        (j) => j.status === "pending" || j.status === "processing"
+      );
+
+      // Stop polling if no active jobs
+      if (activeJobs.length === 0) {
+        return;
+      }
+
       for (const job of activeJobs) {
         try {
           const response = await fetch(job.statusUrl, {
@@ -142,8 +169,13 @@ export function ReportJobsProvider({ children }: { children: ReactNode }) {
       }
     }, 3000); // Poll every 3 seconds
 
-    return () => clearInterval(pollInterval);
-  }, [reportJobs, router]);
+    return () => {
+      clearInterval(pollInterval);
+      isPollingRef.current = false;
+    };
+    // Only re-run when hasActiveJobs changes (not on every reportJobs change)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reportJobs.some((j) => j.status === "pending" || j.status === "processing")]);
 
   const addReportJob = useCallback((job: Omit<ReportJob, "status" | "progress" | "startedAt">) => {
     setReportJobs((prev) => {

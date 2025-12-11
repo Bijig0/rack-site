@@ -1,33 +1,23 @@
+import { Suspense } from "react";
 import Link from "next/link";
-import { getUserProperties, getUserPropertyCount } from "@/actions/properties";
-import { getUserAppraisalReports } from "@/actions/appraisals";
-import { getUserProfile } from "@/actions/user";
 import {
-  StatsBlock,
-  PropertiesList,
-  CompanyBrandingCard,
-  AppraisalReportsList,
-} from "./components/DashboardContent";
+  StatsBlockServer,
+  PropertiesListServer,
+  CompanyBrandingCardServer,
+  AppraisalReportsListServer,
+} from "./components/DashboardServerComponents";
+import {
+  StatsBlockSkeleton,
+  PropertiesListSkeleton,
+  CompanyBrandingCardSkeleton,
+  AppraisalReportsListSkeleton,
+} from "./components/DashboardSkeletons";
 
 export const metadata = {
   title: "Dashboard | Homez",
 };
 
-// Fetch all data in parallel on the server
-async function getDashboardData() {
-  const [properties, propertyCount, reports, profile] = await Promise.all([
-    getUserProperties(),
-    getUserPropertyCount(),
-    getUserAppraisalReports(),
-    getUserProfile(),
-  ]);
-
-  return { properties, propertyCount, reports, profile };
-}
-
-export default async function DashboardPage() {
-  const { properties, propertyCount, reports, profile } = await getDashboardData();
-
+export default function DashboardPage() {
   return (
     <>
       <div className="row pb40">
@@ -40,7 +30,9 @@ export default async function DashboardPage() {
       </div>
 
       <div className="row">
-        <StatsBlock propertyCount={propertyCount} />
+        <Suspense fallback={<StatsBlockSkeleton />}>
+          <StatsBlockServer />
+        </Suspense>
       </div>
 
       <div className="row">
@@ -53,13 +45,17 @@ export default async function DashboardPage() {
                 Add Property
               </Link>
             </div>
-            <PropertiesList properties={properties} />
+            <Suspense fallback={<PropertiesListSkeleton />}>
+              <PropertiesListServer />
+            </Suspense>
           </div>
         </div>
 
         <div className="col-xl-4">
           {/* Company Branding Card */}
-          <CompanyBrandingCard profile={profile} />
+          <Suspense fallback={<CompanyBrandingCardSkeleton />}>
+            <CompanyBrandingCardServer />
+          </Suspense>
 
           <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
             <div className="d-flex align-items-center justify-content-between mb25">
@@ -73,7 +69,9 @@ export default async function DashboardPage() {
                 View All
               </Link>
             </div>
-            <AppraisalReportsList reports={reports} />
+            <Suspense fallback={<AppraisalReportsListSkeleton />}>
+              <AppraisalReportsListServer />
+            </Suspense>
           </div>
         </div>
       </div>

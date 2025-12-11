@@ -1,12 +1,10 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
-
-// Use the same connection string as the API
-const connectionString = process.env.DATABASE_URL || 'postgres://postgres:dAA2eF5B3cfe5G42f4gFEeA3gf114gd5@metro.proxy.rlwy.net:37409/railway';
+import { env } from '@/lib/config';
 
 // For query purposes - use single connection for serverless
-const queryClient = postgres(connectionString, {
+const queryClient = postgres(env.DATABASE_URL, {
   max: 1,
   idle_timeout: 20,
   connect_timeout: 10,

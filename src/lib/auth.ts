@@ -1,10 +1,9 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { cache } from 'react';
+import { env, isProduction } from '@/lib/config';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key-min-32-chars-long!'
-);
+const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET);
 
 export interface TokenPayload {
   userId: string;
@@ -54,7 +53,7 @@ export async function setAuthCookie(token: string): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set('token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction(),
     sameSite: 'lax',
     maxAge: 30 * 24 * 60 * 60, // 30 days
     path: '/',
