@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { revalidateProperties, getPropertyById } from "@/actions/properties";
 import { getUserProfile, type UserProfile } from "@/actions/user";
 import { useReportJobs } from "@/context/ReportJobsContext";
-import { env } from "@/lib/config";
 
 /**
  * Report Job Status Constants - mirrors the server-side ReportJobStatus
@@ -156,8 +155,6 @@ export default function GenerateReportPage({
 
   // Core generation logic (can be called for initial attempt or retry)
   const executeGeneration = useCallback(async (currentAttempt: number): Promise<void> => {
-    const dedicatedServerUrl = env.NEXT_PUBLIC_DEDICATED_SERVER_URL || "http://localhost:3000";
-
     // Use cached property data if available
     let propertyData = propertyDataRef.current;
 
@@ -184,8 +181,8 @@ export default function GenerateReportPage({
       propertyDataRef.current = propertyData;
     }
 
-    // Call the Hono API to start report generation
-    const response = await fetch(`${dedicatedServerUrl}/api/reports/generatePdf`, {
+    // Call the Next.js proxy route (which forwards to Railway with internal API key)
+    const response = await fetch("/api/reports/generate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -206,27 +203,30 @@ export default function GenerateReportPage({
       throw new Error(data.error || data.message || "Failed to start report generation");
     }
 
-    const { statusUrl, jobId } = await response.json();
+    const { jobId } = await response.json();
 
-    if (!statusUrl) {
-      throw new Error("No status URL returned from server");
+    if (!jobId) {
+      throw new Error("No job ID returned from server");
     }
 
+    // Use local proxy route for status polling
+    const localStatusUrl = `/api/reports/jobs/${jobId}`;
+
     // Store job info for context tracking
-    currentJobRef.current = { jobId: jobId || statusUrl, statusUrl };
+    currentJobRef.current = { jobId, statusUrl: localStatusUrl };
 
     // Register job with context so other pages can track it
     addReportJob({
-      jobId: jobId || statusUrl,
+      jobId,
       propertyId: id,
-      statusUrl,
+      statusUrl: localStatusUrl,
     });
 
     setStatusMessage("Report generation started...");
     setProgress(5);
 
-    // Start polling for status
-    await pollJobStatus(statusUrl);
+    // Start polling for status via local proxy
+    await pollJobStatus(localStatusUrl);
   }, [id, pollJobStatus, userProfile, addReportJob]);
 
   // Handle retry with delay
