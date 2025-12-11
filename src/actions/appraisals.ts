@@ -78,3 +78,45 @@ export async function getCompletedAppraisalCount(): Promise<number> {
   const reports = await getRequestCachedAppraisalReports(userId);
   return reports.filter(r => r.status === 'completed').length;
 }
+
+/**
+ * Delete an appraisal report (must belong to the authenticated user)
+ */
+export async function deleteAppraisal(appraisalId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const userId = await getAuthenticatedUserId();
+
+    // Verify the appraisal belongs to the user by checking the property ownership
+    const appraisalRecord = await db
+      .select({
+        id: appraisal.id,
+        propertyId: appraisal.propertyId,
+        userId: property.userId,
+      })
+      .from(appraisal)
+      .innerJoin(property, eq(appraisal.propertyId, property.id))
+      .where(eq(appraisal.id, appraisalId))
+      .limit(1);
+
+    if (appraisalRecord.length === 0) {
+      return { success: false, error: 'Appraisal not found' };
+    }
+
+    if (appraisalRecord[0].userId !== userId) {
+      return { success: false, error: 'Not authorized to delete this appraisal' };
+    }
+
+    // Delete the appraisal
+    await db.delete(appraisal).where(eq(appraisal.id, appraisalId));
+
+    // Revalidate cache
+    const { revalidateTag } = await import('next/cache');
+    revalidateTag('appraisals');
+    revalidateTag('properties');
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting appraisal:', error);
+    return { success: false, error: 'Failed to delete appraisal' };
+  }
+}

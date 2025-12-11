@@ -8,6 +8,7 @@ import {
   updateCompanyName,
   type UserProfile,
 } from "@/actions/user";
+import { CoverPagePreview } from "@/components/branding/CoverPagePreview";
 
 export default function BrandingPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -364,68 +365,19 @@ export default function BrandingPage() {
           <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 position-sticky" style={{ top: 100 }}>
             <h5 className="fz16 fw600 mb20">Report Preview</h5>
             <p className="fz13 text-muted mb20">
-              This is how your branding will appear on appraisal reports:
+              Preview how your branding appears on reports:
             </p>
 
-            {/* Preview Card */}
-            <div
-              className="bdrs8 p20"
-              style={{ backgroundColor: "#f8f9fa", border: "1px solid #e9ecef" }}
-            >
-              <div className="d-flex align-items-center gap-3 mb15 pb15" style={{ borderBottom: "1px solid #e0e0e0" }}>
-                {profile?.companyLogoUrl ? (
-                  <div
-                    className="position-relative flex-shrink-0"
-                    style={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: 8,
-                      overflow: "hidden",
-                      backgroundColor: "#fff",
-                      border: "1px solid #e0e0e0",
-                    }}
-                  >
-                    <Image
-                      src={profile.companyLogoUrl}
-                      alt="Company Logo"
-                      fill
-                      style={{ objectFit: "contain" }}
-                    />
-                  </div>
-                ) : (
-                  <div
-                    className="flex-shrink-0"
-                    style={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: 8,
-                      backgroundColor: "#e9ecef",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <i className="fas fa-building fz16 text-muted" />
-                  </div>
-                )}
-                <div>
-                  <p className="mb-0 fw600 fz14" style={{ color: profile?.companyName ? "#333" : "#aaa" }}>
-                    {profile?.companyName || "Company Name"}
-                  </p>
-                  <p className="mb-0 fz11 text-muted">Rental Appraisal Report</p>
-                </div>
-              </div>
-              <div className="fz12 text-muted">
-                <div className="skeleton-box mb-2" style={{ width: "100%", height: 8, borderRadius: 4, backgroundColor: "#e0e0e0" }}></div>
-                <div className="skeleton-box mb-2" style={{ width: "90%", height: 8, borderRadius: 4, backgroundColor: "#e0e0e0" }}></div>
-                <div className="skeleton-box" style={{ width: "70%", height: 8, borderRadius: 4, backgroundColor: "#e0e0e0" }}></div>
-              </div>
-            </div>
+            {/* Cover Page Preview */}
+            <CoverPagePreview
+              companyName={companyName || profile?.companyName || undefined}
+              companyLogoUrl={profile?.companyLogoUrl}
+            />
 
             {!isBrandingComplete && (
               <p className="fz12 text-muted mt15 mb-0">
                 <i className="fas fa-info-circle me-1" />
-                Complete both fields to see your full branding preview.
+                Add your logo and company name to see the full preview.
               </p>
             )}
           </div>

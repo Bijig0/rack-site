@@ -5,6 +5,36 @@ import Link from "next/link";
 import Image from "next/image";
 import type { PropertyWithAppraisal } from "@/actions/properties";
 import { usePropertyJobs, type PendingJob } from "@/context/PropertyJobsContext";
+import { useReportJobs } from "@/context/ReportJobsContext";
+
+// Card hover styles
+const cardStyles = `
+  .property-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .property-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.12) !important;
+  }
+  .property-card .thumbnail-wrapper {
+    overflow: hidden;
+    border-radius: 8px;
+  }
+  .property-card .thumbnail-wrapper img,
+  .property-card .thumbnail-wrapper .placeholder-thumb {
+    transition: transform 0.35s ease;
+  }
+  .property-card:hover .thumbnail-wrapper img,
+  .property-card:hover .thumbnail-wrapper .placeholder-thumb {
+    transform: scale(1.05);
+  }
+  .property-card .card-title {
+    transition: color 0.2s ease;
+  }
+  .property-card:hover .card-title {
+    color: #3b82f6 !important;
+  }
+`;
 
 // Spinning loader component for generating state
 function GeneratingSpinner() {
@@ -128,7 +158,7 @@ function PendingPropertyCard({ job, onDismiss }: { job: PendingJob; onDismiss: (
   );
 }
 
-function PropertyCard({ property }: { property: PropertyWithAppraisal }) {
+function PropertyCard({ property, isGeneratingReport }: { property: PropertyWithAppraisal; isGeneratingReport: boolean }) {
   const lastAppraisalDate = property.latestAppraisal?.createdAt
     ? new Date(property.latestAppraisal.createdAt).toLocaleDateString("en-AU", {
         day: "numeric",
@@ -137,17 +167,21 @@ function PropertyCard({ property }: { property: PropertyWithAppraisal }) {
       })
     : null;
 
-  const isGenerating =
+  // Check both server state AND context state for generating indicator
+  const isGeneratingFromServer =
     property.latestAppraisal?.status === "pending" ||
     property.latestAppraisal?.status === "processing";
+
+  const isGenerating = isGeneratingFromServer || isGeneratingReport;
 
   return (
     <div className="col-sm-6 col-xl-4">
       <div
-        className="ps-widget bgc-white bdrs12 p30 mb30 overflow-hidden position-relative"
+        className="property-card ps-widget bgc-white bdrs12 p30 mb30 overflow-hidden position-relative"
         style={{
           boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
           border: isGenerating ? "2px solid #3b82f6" : "none",
+          cursor: "pointer",
         }}
       >
         {/* Three dots menu */}
@@ -181,28 +215,29 @@ function PropertyCard({ property }: { property: PropertyWithAppraisal }) {
 
         {/* Property Thumbnail */}
         <Link href={`/dashboard/my-properties/${property.id}`} className="d-block mb20">
-          {property.mainImageUrl ? (
-            <Image
-              src={property.mainImageUrl}
-              alt={property.addressCommonName}
-              width={400}
-              height={140}
-              className="property-thumbnail"
-              style={{ objectFit: "cover" }}
-            />
-          ) : (
-            <div
-              className="d-flex align-items-center justify-content-center"
-              style={{
-                width: "100%",
-                height: 140,
-                borderRadius: 8,
-                backgroundColor: "#f5f5f5",
-              }}
-            >
-              <i className="flaticon-home" style={{ fontSize: 40, color: "#ccc" }} />
-            </div>
-          )}
+          <div className="thumbnail-wrapper">
+            {property.mainImageUrl ? (
+              <Image
+                src={property.mainImageUrl}
+                alt={property.addressCommonName}
+                width={400}
+                height={140}
+                className="property-thumbnail"
+                style={{ objectFit: "cover", width: "100%", height: 140 }}
+              />
+            ) : (
+              <div
+                className="placeholder-thumb d-flex align-items-center justify-content-center"
+                style={{
+                  width: "100%",
+                  height: 140,
+                  backgroundColor: "#f5f5f5",
+                }}
+              >
+                <i className="flaticon-home" style={{ fontSize: 40, color: "#ccc" }} />
+              </div>
+            )}
+          </div>
         </Link>
 
         {/* Address */}
@@ -211,7 +246,7 @@ function PropertyCard({ property }: { property: PropertyWithAppraisal }) {
           className="text-decoration-none"
         >
           <h5
-            className="fw600 mb15"
+            className="card-title fw600 mb15"
             style={{
               color: "#222",
               fontSize: 16,
@@ -299,6 +334,7 @@ interface PropertyListProps {
 export default function PropertyList({ properties }: PropertyListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const { pendingJobs, removeJob } = usePropertyJobs();
+  const { isPropertyGeneratingReport } = useReportJobs();
 
   // Get active pending jobs (pending, processing, or error)
   const activePendingJobs = pendingJobs.filter(
@@ -320,6 +356,7 @@ export default function PropertyList({ properties }: PropertyListProps) {
 
   return (
     <>
+      <style>{cardStyles}</style>
       {/* Header */}
       <div className="row align-items-center pb30">
         <div className="col-lg-6">
@@ -374,7 +411,11 @@ export default function PropertyList({ properties }: PropertyListProps) {
 
         {/* Show existing properties */}
         {filteredProperties.map((property) => (
-          <PropertyCard key={property.id} property={property} />
+          <PropertyCard
+            key={property.id}
+            property={property}
+            isGeneratingReport={isPropertyGeneratingReport(property.id)}
+          />
         ))}
 
         {/* Empty state - only show if no pending jobs AND no properties */}

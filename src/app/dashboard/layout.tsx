@@ -4,8 +4,10 @@ import Footer from "@/components/property/dashboard/Footer";
 import SidebarDashboard from "@/components/property/dashboard/SidebarDashboard";
 import DboardMobileNavigation from "@/components/property/dashboard/DboardMobileNavigation";
 import DashboardMainContent from "@/components/property/dashboard/DashboardMainContent";
+import ScrollToTop from "@/components/common/ScrollToTop";
 import { preloadDashboardData } from "@/lib/preload";
 import { PropertyJobsProvider } from "@/context/PropertyJobsContext";
+import { ReportJobsProvider } from "@/context/ReportJobsContext";
 import { SidebarProvider } from "@/context/SidebarContext";
 
 export default function DashboardLayout({
@@ -19,7 +21,9 @@ export default function DashboardLayout({
 
   return (
     <PropertyJobsProvider>
-      <SidebarProvider>
+      <ReportJobsProvider>
+        <SidebarProvider>
+        <ScrollToTop />
         <DashboardHeader />
         <MobileMenu />
 
@@ -41,6 +45,7 @@ export default function DashboardLayout({
           </div>
         </div>
       </SidebarProvider>
+      </ReportJobsProvider>
     </PropertyJobsProvider>
   );
 }

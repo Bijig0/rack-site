@@ -85,9 +85,8 @@ export const AddressSchema = AddressBaseSchema.refine(
 
 export type Address = z.infer<typeof AddressSchema>;
 
-// Helper to parse address from Mapbox result
-export function parseMapboxAddress(feature: any): Partial<Address> {
-  const context = feature.properties?.context || {};
+// Helper to parse address from Google Places result
+export function parseGooglePlacesAddress(place: google.maps.places.PlaceResult): Partial<Address> {
   const address: Partial<Address> = {
     addressLine: '',
     suburb: '',
@@ -95,46 +94,51 @@ export function parseMapboxAddress(feature: any): Partial<Address> {
     postcode: '',
   };
 
-  // Extract address line (street number + street name)
-  const streetNumber = feature.properties?.address || '';
-  const streetName = feature.properties?.name || '';
+  if (!place.address_components) {
+    return address;
+  }
+
+  let streetNumber = '';
+  let streetName = '';
+
+  const stateMap: Record<string, AustralianState> = {
+    'Australian Capital Territory': 'ACT',
+    'New South Wales': 'NSW',
+    'Northern Territory': 'NT',
+    'Queensland': 'QLD',
+    'South Australia': 'SA',
+    'Tasmania': 'TAS',
+    'Victoria': 'VIC',
+    'Western Australia': 'WA',
+    'ACT': 'ACT',
+    'NSW': 'NSW',
+    'NT': 'NT',
+    'QLD': 'QLD',
+    'SA': 'SA',
+    'TAS': 'TAS',
+    'VIC': 'VIC',
+    'WA': 'WA',
+  };
+
+  for (const component of place.address_components) {
+    const types = component.types;
+
+    if (types.includes('street_number')) {
+      streetNumber = component.long_name;
+    } else if (types.includes('route')) {
+      streetName = component.long_name;
+    } else if (types.includes('locality')) {
+      address.suburb = component.long_name;
+    } else if (types.includes('administrative_area_level_1')) {
+      const stateCode = component.short_name;
+      address.state = stateMap[stateCode] || stateMap[component.long_name];
+    } else if (types.includes('postal_code')) {
+      address.postcode = component.long_name;
+    }
+  }
+
+  // Construct address line
   address.addressLine = streetNumber ? `${streetNumber} ${streetName}` : streetName;
-
-  // Extract suburb (locality)
-  if (context.locality) {
-    address.suburb = context.locality.name;
-  } else if (context.place) {
-    address.suburb = context.place.name;
-  }
-
-  // Extract state
-  if (context.region) {
-    const stateCode = context.region.region_code?.replace('AU-', '') || context.region.name;
-    const stateMap: Record<string, AustralianState> = {
-      'Australian Capital Territory': 'ACT',
-      'New South Wales': 'NSW',
-      'Northern Territory': 'NT',
-      'Queensland': 'QLD',
-      'South Australia': 'SA',
-      'Tasmania': 'TAS',
-      'Victoria': 'VIC',
-      'Western Australia': 'WA',
-      'ACT': 'ACT',
-      'NSW': 'NSW',
-      'NT': 'NT',
-      'QLD': 'QLD',
-      'SA': 'SA',
-      'TAS': 'TAS',
-      'VIC': 'VIC',
-      'WA': 'WA',
-    };
-    address.state = stateMap[stateCode] || stateMap[context.region.name];
-  }
-
-  // Extract postcode
-  if (context.postcode) {
-    address.postcode = context.postcode.name;
-  }
 
   return address;
 }

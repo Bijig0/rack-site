@@ -6,13 +6,30 @@ import { use, useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { revalidateProperties, getPropertyById } from "@/actions/properties";
 import { getUserProfile, type UserProfile } from "@/actions/user";
+import { useReportJobs } from "@/context/ReportJobsContext";
+
+/**
+ * Report Job Status Constants - mirrors the server-side ReportJobStatus
+ */
+const ReportJobStatus = {
+  QUEUED: "queued",
+  FETCHING_DATA: "fetching_data",
+  DATA_COLLECTED: "data_collected",
+  GENERATING_PDF: "generating_pdf",
+  COMPLETED: "completed",
+  FAILED: "failed",
+} as const;
+
+type ReportJobStatusType = (typeof ReportJobStatus)[keyof typeof ReportJobStatus];
 
 type JobStatus = {
-  status: "waiting" | "active" | "completed" | "failed" | "success";
+  status: ReportJobStatusType;
   progress?: number;
-  generateAPIUrl?: string;
-  error?: string;
   message?: string;
+  error?: string;
+  appraisalId?: string;
+  propertyId?: string;
+  pdfUrl?: string;
 };
 
 type ErrorInfo = {
@@ -32,6 +49,7 @@ export default function GenerateReportPage({
   const resolvedParams = use(params);
   const id = resolvedParams.id;
   const router = useRouter();
+  const { addReportJob, removeReportJob } = useReportJobs();
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +67,9 @@ export default function GenerateReportPage({
     state: string;
     postcode: string;
   } | null>(null);
+
+  // Track current job info for context
+  const currentJobRef = useRef<{ jobId: string; statusUrl: string } | null>(null);
 
   // Load user profile on mount
   useEffect(() => {
@@ -79,46 +100,49 @@ export default function GenerateReportPage({
 
         const data: JobStatus = await response.json();
 
-        // Update progress
+        // Update progress from server
         if (typeof data.progress === "number") {
           setProgress(data.progress);
         }
 
-        // Update status message based on progress
-        if (data.progress !== undefined) {
-          if (data.progress < 30) {
-            setStatusMessage("Fetching property data...");
-          } else if (data.progress < 60) {
-            setStatusMessage("Analyzing market data...");
-          } else if (data.progress < 90) {
-            setStatusMessage("Generating report...");
-          } else {
-            setStatusMessage("Finalizing...");
-          }
+        // Update status message based on explicit job status
+        switch (data.status) {
+          case ReportJobStatus.QUEUED:
+            setStatusMessage("Waiting in queue...");
+            break;
+          case ReportJobStatus.FETCHING_DATA:
+            setStatusMessage("Fetching property data from various sources...");
+            break;
+          case ReportJobStatus.DATA_COLLECTED:
+            setStatusMessage("Property data collected, preparing PDF...");
+            break;
+          case ReportJobStatus.GENERATING_PDF:
+            setStatusMessage("Generating PDF report...");
+            break;
+          case ReportJobStatus.COMPLETED:
+            setProgress(100);
+            setStatusMessage("Report generated successfully!");
+            setErrorHistory([]); // Clear error history on success
+
+            // Revalidate caches
+            await revalidateProperties();
+
+            // Redirect back to property detail page
+            setTimeout(() => {
+              router.push(`/dashboard/my-properties/${id}`);
+              router.refresh();
+            }, 500);
+            return;
+          case ReportJobStatus.FAILED:
+            throw new Error(data.error || data.message || "Report generation failed");
+          default:
+            // Use server message if available
+            if (data.message) {
+              setStatusMessage(data.message);
+            }
         }
 
-        // Check completion states
-        if (data.status === "success" || data.status === "completed") {
-          setProgress(100);
-          setStatusMessage("Report generated successfully!");
-          setErrorHistory([]); // Clear error history on success
-
-          // Revalidate caches
-          await revalidateProperties();
-
-          // Redirect back to property detail page
-          setTimeout(() => {
-            router.push(`/dashboard/my-properties/${id}`);
-            router.refresh();
-          }, 500);
-          return;
-        }
-
-        if (data.status === "failed") {
-          throw new Error(data.error || data.message || "Report generation failed");
-        }
-
-        // Continue polling for waiting/active states
+        // Continue polling for non-terminal states
         await new Promise((resolve) => setTimeout(resolve, pollInterval));
         return poll();
       } catch (err) {
@@ -181,18 +205,28 @@ export default function GenerateReportPage({
       throw new Error(data.error || data.message || "Failed to start report generation");
     }
 
-    const { statusUrl } = await response.json();
+    const { statusUrl, jobId } = await response.json();
 
     if (!statusUrl) {
       throw new Error("No status URL returned from server");
     }
+
+    // Store job info for context tracking
+    currentJobRef.current = { jobId: jobId || statusUrl, statusUrl };
+
+    // Register job with context so other pages can track it
+    addReportJob({
+      jobId: jobId || statusUrl,
+      propertyId: id,
+      statusUrl,
+    });
 
     setStatusMessage("Report generation started...");
     setProgress(5);
 
     // Start polling for status
     await pollJobStatus(statusUrl);
-  }, [id, pollJobStatus, userProfile]);
+  }, [id, pollJobStatus, userProfile, addReportJob]);
 
   // Handle retry with delay
   const handleRetry = useCallback(async (errorMessage: string, currentAttempt: number) => {
@@ -257,6 +291,22 @@ export default function GenerateReportPage({
 
   return (
     <>
+      <style jsx>{`
+        @keyframes fadeSlideIn {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
       <div className="row align-items-center pb40">
         <div className="col-lg-12">
           <div className="dashboard_title_area">
@@ -407,7 +457,21 @@ export default function GenerateReportPage({
               </div>
             )}
 
-            <div className="d-flex gap-3">
+            <div className="d-flex flex-wrap gap-3 align-items-center">
+              {/* "Go to My Properties" button - appears on the left when generating */}
+              {isGenerating && (
+                <Link
+                  href="/dashboard/my-properties"
+                  className="ud-btn btn-dark d-flex align-items-center"
+                  style={{
+                    animation: "fadeSlideIn 0.3s ease forwards",
+                  }}
+                >
+                  <i className="fas fa-arrow-left me-2"></i>
+                  Go to My Properties
+                </Link>
+              )}
+
               <button
                 onClick={handleGenerateReport}
                 disabled={isGenerating}
@@ -429,12 +493,27 @@ export default function GenerateReportPage({
                   </>
                 )}
               </button>
-              <Link
-                href={`/dashboard/my-properties/${id}`}
-                className="ud-btn btn-white2"
-              >
-                Cancel
-              </Link>
+              {!isGenerating && (
+                <Link
+                  href={`/dashboard/my-properties/${id}`}
+                  className="ud-btn btn-white2"
+                >
+                  Cancel
+                </Link>
+              )}
+
+              {/* Helper text below buttons when generating */}
+              {isGenerating && (
+                <span
+                  className="fz12 text-muted w-100 mt-2"
+                  style={{
+                    animation: "fadeIn 0.5s ease",
+                  }}
+                >
+                  <i className="fas fa-info-circle me-1"></i>
+                  You can navigate away - report generation will continue in the background
+                </span>
+              )}
             </div>
           </div>
         </div>

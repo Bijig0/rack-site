@@ -7,6 +7,7 @@ import { getPropertyTags } from "@/actions/tags";
 import DeletePropertyButton from "@/components/property/DeletePropertyButton";
 import ChecklistManagement from "@/components/property/ChecklistManagement";
 import PropertyTags from "@/components/property/PropertyTags";
+import AppraisalReportsTable from "@/components/property/AppraisalReportsTable";
 
 
 // Generate metadata
@@ -404,106 +405,7 @@ export default async function PropertyDetailPage({
           {/* Appraisal Reports */}
           <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
             <h4 className="title fz17 mb30">Appraisal Reports</h4>
-            {appraisals.length === 0 ? (
-              <p className="text-muted">No appraisal reports generated yet.</p>
-            ) : (
-              <div className="table-responsive">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Report ID</th>
-                      <th>Date Generated</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {appraisals.map((appraisal) => {
-                      const isGenerating =
-                        appraisal.status === "pending" ||
-                        appraisal.status === "processing";
-
-                      return (
-                        <tr
-                          key={appraisal.id}
-                          style={{
-                            backgroundColor: isGenerating
-                              ? "rgba(59, 130, 246, 0.05)"
-                              : undefined,
-                          }}
-                        >
-                          <td>
-                            <code
-                              style={{
-                                fontSize: 12,
-                                backgroundColor: "#f5f5f5",
-                                padding: "2px 6px",
-                                borderRadius: 4,
-                              }}
-                            >
-                              {appraisal.id.slice(0, 8)}...
-                            </code>
-                          </td>
-                          <td>{formatDate(appraisal.createdAt)}</td>
-                          <td>
-                            {isGenerating ? (
-                              <span
-                                className="badge d-inline-flex align-items-center gap-1"
-                                style={{
-                                  backgroundColor:
-                                    appraisal.status === "processing"
-                                      ? "#3b82f6"
-                                      : "#f59e0b",
-                                  color: "#fff",
-                                }}
-                              >
-                                <span
-                                  className="spinner-border spinner-border-sm"
-                                  style={{
-                                    width: 10,
-                                    height: 10,
-                                    borderWidth: 2,
-                                  }}
-                                />
-                                {appraisal.status === "processing"
-                                  ? "Generating..."
-                                  : "Pending"}
-                              </span>
-                            ) : (
-                              <span
-                                className={`badge ${
-                                  appraisal.status === "completed"
-                                    ? "bg-success"
-                                    : "bg-danger"
-                                }`}
-                              >
-                                {appraisal.status}
-                              </span>
-                            )}
-                          </td>
-                          <td>
-                            {appraisal.pdfUrl ? (
-                              <a
-                                href={appraisal.pdfUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="btn btn-sm btn-outline-primary"
-                              >
-                                <i className="fas fa-file-pdf me-1"></i> View PDF
-                              </a>
-                            ) : isGenerating ? (
-                              <span className="text-muted fz12">
-                                Report will be available soon
-                              </span>
-                            ) : null}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <AppraisalReportsTable appraisals={appraisals} propertyId={id} />
           </div>
 
           {/* Checklist Management */}

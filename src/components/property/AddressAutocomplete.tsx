@@ -1,45 +1,69 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import { AddressSchema, AustralianStateSchema, parseMapboxAddress, type Address, type AustralianState } from "@/lib/address-schema";
+import { useState, useRef, useEffect } from "react";
+import { AddressSchema, parseGooglePlacesAddress, type Address, type AustralianState } from "@/lib/address-schema";
 import { ZodError } from "zod";
 
-const MAPBOX_TOKEN = "pk.eyJ1IjoiYmlqaWcwIiwiYSI6ImNtaXRjNjQ2bjFtbXozZ29id2FrN2w5aTgifQ.wQhNlZC8qZq4uxpI3fLauw";
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyDb93Ppqj_Q423e2VRrWmaJ0tG4mCvi2Qs";
 
 interface AddressAutocompleteProps {
   onAddressChange: (address: Address | null, addressCommonName: string) => void;
   initialAddress?: Partial<Address>;
 }
 
-interface MapboxSuggestion {
-  id: string;
-  name: string;
-  full_address: string;
-  mapbox_id: string;
+// Track if Google Maps script is loaded globally
+let googleMapsLoaded = false;
+let googleMapsLoading = false;
+const loadCallbacks: Array<() => void> = [];
+
+function loadGoogleMapsScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (googleMapsLoaded || window.google?.maps?.places) {
+      googleMapsLoaded = true;
+      resolve();
+      return;
+    }
+
+    if (googleMapsLoading) {
+      loadCallbacks.push(() => resolve());
+      return;
+    }
+
+    googleMapsLoading = true;
+
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+
+    script.onload = () => {
+      googleMapsLoaded = true;
+      googleMapsLoading = false;
+      loadCallbacks.forEach(cb => cb());
+      loadCallbacks.length = 0;
+      resolve();
+    };
+
+    script.onerror = () => {
+      googleMapsLoading = false;
+      reject(new Error("Failed to load Google Maps script"));
+    };
+
+    document.head.appendChild(script);
+  });
 }
 
-interface MapboxFeature {
-  properties: {
-    name: string;
-    address?: string;
-    full_address?: string;
-    context?: {
-      locality?: { name: string };
-      place?: { name: string };
-      region?: { name: string; region_code?: string };
-      postcode?: { name: string };
-      country?: { name: string };
-    };
-  };
+// Clean up pac-container elements created by Google Maps
+function cleanupPacContainers() {
+  const pacContainers = document.querySelectorAll(".pac-container");
+  pacContainers.forEach(container => container.remove());
 }
 
 export default function AddressAutocomplete({ onAddressChange, initialAddress }: AddressAutocompleteProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<MapboxSuggestion[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddressSelected, setIsAddressSelected] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [searchValue, setSearchValue] = useState("");
 
   const [address, setAddress] = useState<Partial<Address>>({
     addressLine: initialAddress?.addressLine || "",
@@ -48,89 +72,101 @@ export default function AddressAutocomplete({ onAddressChange, initialAddress }:
     postcode: initialAddress?.postcode || "",
   });
 
-  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const isMountedRef = useRef(true);
 
-  // Close suggestions when clicking outside
+  // Load Google Maps script
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    isMountedRef.current = true;
 
-  const searchAddress = useCallback(async (query: string) => {
-    if (query.length < 3) {
-      setSuggestions([]);
+    if (!GOOGLE_MAPS_API_KEY) {
+      console.error("Google Maps API key is not configured");
+      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(query)}&country=au&types=address&access_token=${MAPBOX_TOKEN}`
-      );
-      const data = await response.json();
+    loadGoogleMapsScript()
+      .then(() => {
+        if (isMountedRef.current) {
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        if (isMountedRef.current) {
+          setIsLoading(false);
+        }
+      });
 
-      if (data.features) {
-        setSuggestions(
-          data.features.map((f: any) => ({
-            id: f.id,
-            name: f.properties.name,
-            full_address: f.properties.full_address,
-            mapbox_id: f.id,
-          }))
-        );
-        setShowSuggestions(true);
+    return () => {
+      isMountedRef.current = false;
+      // Clean up autocomplete on unmount
+      if (autocompleteRef.current) {
+        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
       }
-    } catch (error) {
-      console.error("Error fetching address suggestions:", error);
-    } finally {
-      setIsLoading(false);
-    }
+      // Clean up pac-container elements
+      cleanupPacContainers();
+    };
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    setIsAddressSelected(false);
-    setValidationErrors({});
-
-    // Debounce the search
-    if (searchTimeout.current) {
-      clearTimeout(searchTimeout.current);
+  // Initialize autocomplete when Google Maps is loaded and input is ready
+  useEffect(() => {
+    if (isLoading || !inputRef.current || !window.google?.maps?.places || isAddressSelected) {
+      return;
     }
-    searchTimeout.current = setTimeout(() => {
-      searchAddress(value);
-    }, 300);
-  };
 
-  const selectSuggestion = async (suggestion: MapboxSuggestion) => {
-    setSearchQuery(suggestion.full_address);
-    setShowSuggestions(false);
+    // Prevent re-initialization
+    if (autocompleteRef.current) {
+      return;
+    }
 
-    // Fetch full details for the selected address
-    try {
-      const response = await fetch(
-        `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(suggestion.full_address)}&country=au&types=address&limit=1&access_token=${MAPBOX_TOKEN}`
-      );
-      const data = await response.json();
+    const input = inputRef.current;
+    const autocomplete = new window.google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: "au" },
+      types: ["address"],
+      fields: ["address_components", "formatted_address", "geometry"],
+    });
 
-      if (data.features && data.features.length > 0) {
-        const feature = data.features[0];
-        const parsedAddress = parseMapboxAddress(feature);
-
-        setAddress(parsedAddress);
-        setIsAddressSelected(true);
-        validateAndNotify(parsedAddress, suggestion.full_address);
+    // Prevent form submission when pressing Enter on autocomplete selection
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const pacContainer = document.querySelector(".pac-container");
+        if (pacContainer && pacContainer.querySelector(".pac-item-selected")) {
+          e.preventDefault();
+        }
       }
-    } catch (error) {
-      console.error("Error fetching address details:", error);
-    }
-  };
+    });
+
+    autocomplete.addListener("place_changed", () => {
+      if (!isMountedRef.current) return;
+
+      const place = autocomplete.getPlace();
+
+      if (!place.address_components) {
+        return;
+      }
+
+      const parsedAddress = parseGooglePlacesAddress(place);
+      const formattedAddress = place.formatted_address || "";
+
+      setAddress(parsedAddress);
+      setSearchValue(formattedAddress);
+      setIsAddressSelected(true);
+      validateAndNotify(parsedAddress, formattedAddress);
+    });
+
+    autocompleteRef.current = autocomplete;
+
+    return () => {
+      if (autocompleteRef.current) {
+        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
+      }
+    };
+  }, [isLoading, isAddressSelected]);
 
   const validateAndNotify = (addr: Partial<Address>, commonName: string) => {
     try {
@@ -140,7 +176,6 @@ export default function AddressAutocomplete({ onAddressChange, initialAddress }:
     } catch (error) {
       if (error instanceof ZodError) {
         const errors: Record<string, string> = {};
-        // Zod 4 uses .issues instead of .errors
         const issues = (error as any).issues || (error as any).errors || [];
         issues.forEach((err: any) => {
           if (err.path?.[0]) {
@@ -168,7 +203,30 @@ export default function AddressAutocomplete({ onAddressChange, initialAddress }:
     validateAndNotify(newAddress, commonName);
   };
 
+  const handleReset = () => {
+    setIsAddressSelected(false);
+    setSearchValue("");
+    setAddress({ addressLine: "", suburb: "", state: undefined, postcode: "" });
+    onAddressChange(null, "");
+    // Clear autocomplete reference so it reinitializes
+    if (autocompleteRef.current) {
+      google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      autocompleteRef.current = null;
+    }
+    // Clean up any stale pac-container elements
+    cleanupPacContainers();
+  };
+
   const australianStates: AustralianState[] = ["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"];
+
+  if (!GOOGLE_MAPS_API_KEY) {
+    return (
+      <div className="alert alert-warning">
+        <i className="fas fa-exclamation-triangle me-2"></i>
+        Google Maps API key is not configured. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.
+      </div>
+    );
+  }
 
   return (
     <div ref={wrapperRef} className="address-autocomplete">
@@ -180,12 +238,13 @@ export default function AddressAutocomplete({ onAddressChange, initialAddress }:
           </label>
           <div className="position-relative">
             <input
+              ref={inputRef}
               type="text"
               className="form-control form-control-lg"
-              placeholder="Start typing an Australian address..."
-              value={searchQuery}
-              onChange={handleInputChange}
-              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+              placeholder={isLoading ? "Loading Google Maps..." : "Start typing an Australian address..."}
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              disabled={isLoading}
               autoComplete="off"
             />
             {isLoading && (
@@ -194,26 +253,6 @@ export default function AddressAutocomplete({ onAddressChange, initialAddress }:
               </div>
             )}
           </div>
-
-          {/* Suggestions Dropdown */}
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="position-absolute w-100 mt-1 bg-white border rounded shadow-sm z-3" style={{ maxHeight: "300px", overflowY: "auto" }}>
-              {suggestions.map((suggestion) => (
-                <button
-                  key={suggestion.id}
-                  type="button"
-                  className="d-block w-100 text-start p-3 border-0 bg-transparent hover-bg-light"
-                  onClick={() => selectSuggestion(suggestion)}
-                  style={{ cursor: "pointer" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                >
-                  <div className="fw500">{suggestion.name}</div>
-                  <small className="text-muted">{suggestion.full_address}</small>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
@@ -228,12 +267,7 @@ export default function AddressAutocomplete({ onAddressChange, initialAddress }:
             <button
               type="button"
               className="btn btn-link p-0 text-decoration-underline"
-              onClick={() => {
-                setIsAddressSelected(false);
-                setSearchQuery("");
-                setAddress({ addressLine: "", suburb: "", state: undefined, postcode: "" });
-                onAddressChange(null, "");
-              }}
+              onClick={handleReset}
             >
               Change address
             </button>

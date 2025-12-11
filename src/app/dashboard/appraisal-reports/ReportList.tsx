@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { deleteAppraisal } from "@/actions/appraisals";
+import { usePropertyJobs } from "@/context/PropertyJobsContext";
+import ConfirmModal from "@/components/common/ConfirmModal";
 
 type Report = {
   id: string;
@@ -28,7 +32,15 @@ function GeneratingSpinner({ size = 14 }: { size?: number }) {
   );
 }
 
-function ReportCard({ report }: { report: Report }) {
+function ReportCard({
+  report,
+  onDeleteClick,
+}: {
+  report: Report;
+  onDeleteClick: (id: string, address: string) => void;
+}) {
+  const [isIdExpanded, setIsIdExpanded] = useState(false);
+
   const reportDate = new Date(report.createdAt).toLocaleDateString("en-AU", {
     day: "numeric",
     month: "long",
@@ -98,14 +110,19 @@ function ReportCard({ report }: { report: Report }) {
           <span style={{ color: "#888" }}>Report ID</span>
           <code
             className="ms-2"
+            onClick={() => setIsIdExpanded(!isIdExpanded)}
             style={{
               fontSize: 11,
               backgroundColor: "#f5f5f5",
               padding: "2px 6px",
               borderRadius: 4,
+              cursor: "pointer",
+              userSelect: isIdExpanded ? "text" : "none",
+              wordBreak: isIdExpanded ? "break-all" : "normal",
             }}
+            title={isIdExpanded ? "Click to collapse" : "Click to expand"}
           >
-            {report.id.slice(0, 8)}...
+            {isIdExpanded ? report.id : `${report.id.slice(0, 8)}...`}
           </code>
         </div>
 
@@ -137,7 +154,7 @@ function ReportCard({ report }: { report: Report }) {
         </div>
 
         {/* Report Creation Date or Generating Status */}
-        <div className="fz14">
+        <div className="fz14 mb15">
           {isGenerating ? (
             <div className="d-flex align-items-center gap-2">
               <GeneratingSpinner size={14} />
@@ -159,6 +176,20 @@ function ReportCard({ report }: { report: Report }) {
             </>
           )}
         </div>
+
+        {/* Delete button */}
+        {!isGenerating && (
+          <div className="pt-2 border-top">
+            <button
+              onClick={() => onDeleteClick(report.id, report.addressCommonName)}
+              className="btn btn-sm btn-outline-danger"
+              style={{ padding: "4px 12px", fontSize: 12 }}
+            >
+              <i className="fas fa-trash-alt me-1"></i>
+              Delete Report
+            </button>
+          </div>
+        )}
 
         {/* Generating badge overlay */}
         {isGenerating && (
@@ -189,11 +220,45 @@ interface ReportListProps {
 }
 
 export default function ReportList({ reports }: ReportListProps) {
+  const router = useRouter();
+  const { showToast } = usePropertyJobs();
   const [searchQuery, setSearchQuery] = useState("");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState<{ id: string; address: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredReports = reports.filter((report) =>
     report.addressCommonName.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleDeleteClick = (id: string, address: string) => {
+    setReportToDelete({ id, address });
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!reportToDelete) return;
+
+    setIsDeleting(true);
+    const result = await deleteAppraisal(reportToDelete.id);
+    setIsDeleting(false);
+
+    if (result.success) {
+      setDeleteModalOpen(false);
+      showToast("success", "Appraisal report deleted successfully");
+      setReportToDelete(null);
+      router.refresh();
+    } else {
+      showToast("error", result.error || "Failed to delete appraisal");
+    }
+  };
+
+  const handleCloseModal = () => {
+    if (!isDeleting) {
+      setDeleteModalOpen(false);
+      setReportToDelete(null);
+    }
+  };
 
   return (
     <>
@@ -268,10 +333,22 @@ export default function ReportList({ reports }: ReportListProps) {
           </div>
         ) : (
           filteredReports.map((report) => (
-            <ReportCard key={report.id} report={report} />
+            <ReportCard key={report.id} report={report} onDeleteClick={handleDeleteClick} />
           ))
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={handleCloseModal}
+        onConfirm={handleConfirmDelete}
+        title="Delete Appraisal Report"
+        message={`Are you sure you want to delete the appraisal report for "${reportToDelete?.address || ''}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isLoading={isDeleting}
+        variant="danger"
+      />
     </>
   );
 }

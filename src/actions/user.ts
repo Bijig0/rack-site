@@ -4,7 +4,8 @@ import { db } from '@/lib/db';
 import { user, account } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { hash, compare } from 'bcryptjs';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag, unstable_cache } from 'next/cache';
+import { cache } from 'react';
 import { getSession } from '@/lib/auth';
 
 export type UserProfile = {
@@ -29,11 +30,9 @@ async function getAuthenticatedUserId(): Promise<string> {
 }
 
 /**
- * Get user profile
+ * Fetch user profile from database
  */
-export async function getUserProfile(): Promise<UserProfile | null> {
-  const userId = await getAuthenticatedUserId();
-
+async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
   const users = await db
     .select({
       id: user.id,
@@ -49,6 +48,33 @@ export async function getUserProfile(): Promise<UserProfile | null> {
     .limit(1);
 
   return users[0] || null;
+}
+
+/**
+ * Persistent cache for user profile (60 second TTL)
+ */
+const getCachedUserProfile = unstable_cache(
+  async (userId: string) => fetchUserProfile(userId),
+  ['user-profile'],
+  {
+    revalidate: 60,
+    tags: ['user-profile']
+  }
+);
+
+/**
+ * Request-level deduplication for user profile
+ */
+const getRequestCachedUserProfile = cache(async (userId: string) => {
+  return getCachedUserProfile(userId);
+});
+
+/**
+ * Get user profile - cached at both request and persistent levels
+ */
+export async function getUserProfile(): Promise<UserProfile | null> {
+  const userId = await getAuthenticatedUserId();
+  return getRequestCachedUserProfile(userId);
 }
 
 /**
