@@ -2,11 +2,12 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { revalidateProperties } from "@/actions/properties";
+import { revalidateProperty } from "@/actions/properties";
 
 export interface ReportJob {
   jobId: string;
   propertyId: string;
+  propertyName?: string;
   statusUrl: string;
   status: "pending" | "processing" | "completed" | "failed";
   progress: number;
@@ -28,9 +29,20 @@ const ReportJobsContext = createContext<ReportJobsContextType | null>(null);
 const STORAGE_KEY = "pending-report-jobs";
 const JOB_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes - jobs older than this are considered stale
 
-export function ReportJobsProvider({ children }: { children: ReactNode }) {
+interface ReportJobsProviderProps {
+  children: ReactNode;
+  showToast?: (type: "success" | "error" | "warning" | "info", message: string) => void;
+}
+
+export function ReportJobsProvider({ children, showToast }: ReportJobsProviderProps) {
   const [reportJobs, setReportJobs] = useState<ReportJob[]>([]);
   const router = useRouter();
+  const showToastRef = useRef(showToast);
+
+  // Keep ref in sync
+  useEffect(() => {
+    showToastRef.current = showToast;
+  }, [showToast]);
 
   // Use refs to avoid stale closures in polling interval
   const reportJobsRef = useRef<ReportJob[]>([]);
@@ -124,8 +136,12 @@ export function ReportJobsProvider({ children }: { children: ReactNode }) {
               )
             );
 
-            // Revalidate the properties cache
-            await revalidateProperties();
+            // Show success toast
+            const propertyName = job.propertyName || "Property";
+            showToastRef.current?.("success", `Appraisal report for "${propertyName}" generated successfully!`);
+
+            // Revalidate the specific property's cache (includes properties and appraisals tags)
+            await revalidateProperty(job.propertyId);
 
             // Trigger refresh to update server components
             router.refresh();
@@ -143,6 +159,11 @@ export function ReportJobsProvider({ children }: { children: ReactNode }) {
                   : j
               )
             );
+
+            // Show error toast
+            const propertyName = job.propertyName || "Property";
+            const errorMsg = data.error || data.message || "Unknown error";
+            showToastRef.current?.("error", `Failed to generate report for "${propertyName}": ${errorMsg}`);
 
             // Remove failed jobs after showing error briefly
             setTimeout(() => {

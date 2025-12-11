@@ -116,6 +116,8 @@ export async function deleteAppraisal(appraisalId: string): Promise<{ success: b
     const { revalidateTag, revalidatePath } = await import('next/cache');
     revalidateTag('appraisals');
     revalidateTag('properties');
+    // Revalidate the specific property's cache entry (used by getPropertyById)
+    revalidateTag(`property-${propertyId}`);
     // Also revalidate the specific property page path
     revalidatePath(`/dashboard/my-properties/${propertyId}`);
     revalidatePath('/dashboard/appraisal-reports');

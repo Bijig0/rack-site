@@ -260,6 +260,7 @@ export async function getAllPropertyIds(): Promise<string[]> {
  */
 export async function revalidateProperties() {
   revalidateTag('properties');
+  revalidateTag('appraisals');
 }
 
 /**
@@ -267,6 +268,7 @@ export async function revalidateProperties() {
  */
 export async function revalidateProperty(propertyId: string) {
   revalidateTag('properties');
+  revalidateTag('appraisals');
   revalidateTag(`property-${propertyId}`);
 }
 

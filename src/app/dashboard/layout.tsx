@@ -6,9 +6,7 @@ import DboardMobileNavigation from "@/components/property/dashboard/DboardMobile
 import DashboardMainContent from "@/components/property/dashboard/DashboardMainContent";
 import ScrollToTop from "@/components/common/ScrollToTop";
 import { preloadDashboardData } from "@/lib/preload";
-import { PropertyJobsProvider } from "@/context/PropertyJobsContext";
-import { ReportJobsProvider } from "@/context/ReportJobsContext";
-import { SidebarProvider } from "@/context/SidebarContext";
+import DashboardProviders from "@/components/providers/DashboardProviders";
 
 export default function DashboardLayout({
   children,
@@ -20,32 +18,28 @@ export default function DashboardLayout({
   preloadDashboardData();
 
   return (
-    <PropertyJobsProvider>
-      <ReportJobsProvider>
-        <SidebarProvider>
-        <ScrollToTop />
-        <DashboardHeader />
-        <MobileMenu />
+    <DashboardProviders>
+      <ScrollToTop />
+      <DashboardHeader />
+      <MobileMenu />
 
-        <div className="dashboard_content_wrapper">
-          <div className="dashboard dashboard_wrapper pr30 pr0-xl">
-            <SidebarDashboard />
+      <div className="dashboard_content_wrapper">
+        <div className="dashboard dashboard_wrapper pr30 pr0-xl">
+          <SidebarDashboard />
 
-            <DashboardMainContent>
-              <div className="row pb40">
-                <div className="col-lg-12">
-                  <DboardMobileNavigation />
-                </div>
+          <DashboardMainContent>
+            <div className="row pb40">
+              <div className="col-lg-12">
+                <DboardMobileNavigation />
               </div>
+            </div>
 
-              {children}
+            {children}
 
-              <Footer />
-            </DashboardMainContent>
-          </div>
+            <Footer />
+          </DashboardMainContent>
         </div>
-      </SidebarProvider>
-      </ReportJobsProvider>
-    </PropertyJobsProvider>
+      </div>
+    </DashboardProviders>
   );
 }

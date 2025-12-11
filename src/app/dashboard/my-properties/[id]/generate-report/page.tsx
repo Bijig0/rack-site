@@ -66,6 +66,7 @@ export default function GenerateReportPage({
     suburb: string;
     state: string;
     postcode: string;
+    addressCommonName: string;
   } | null>(null);
 
   // Track current job info for context
@@ -177,6 +178,7 @@ export default function GenerateReportPage({
         suburb: property.suburb,
         state: property.state,
         postcode: property.postcode,
+        addressCommonName: property.addressCommonName,
       };
       propertyDataRef.current = propertyData;
     }
@@ -220,6 +222,7 @@ export default function GenerateReportPage({
     addReportJob({
       jobId,
       propertyId: id,
+      propertyName: propertyData.addressCommonName,
       statusUrl: localStatusUrl,
     });
 
