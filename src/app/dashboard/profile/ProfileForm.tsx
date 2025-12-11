@@ -326,6 +326,102 @@ export default function ProfileForm({ initialProfile }: ProfileFormProps) {
               </li>
             </ul>
           </div>
+
+          {/* Subscription Plan Section */}
+          <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30">
+            <div className="d-flex align-items-center justify-content-between mb20">
+              <h4 className="title fz17 mb-0">Subscription Plan</h4>
+              <span
+                className="badge fz11"
+                style={{
+                  backgroundColor: "#4caf50",
+                  color: "white",
+                }}
+              >
+                FREE LAUNCH
+              </span>
+            </div>
+
+            <div
+              className="p20 bdrs12 mb20"
+              style={{
+                backgroundColor: "#f8f9fa",
+                border: "1px solid #e0e0e0",
+              }}
+            >
+              <div className="d-flex align-items-center justify-content-between mb15">
+                <h5 className="mb-0 fw600">Starter Plan</h5>
+                <span
+                  style={{
+                    color: "#4caf50",
+                    fontSize: 24,
+                    fontWeight: 700,
+                  }}
+                >
+                  $0<span className="fz14 text-muted fw400">/month</span>
+                </span>
+              </div>
+
+              <ul className="list-unstyled mb-0 fz14">
+                <li className="d-flex align-items-center mb10">
+                  <span
+                    className="me-2 flex-shrink-0"
+                    style={{
+                      width: 18,
+                      height: 18,
+                      backgroundColor: "#e8f5e9",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <i className="fas fa-check" style={{ color: "#4caf50", fontSize: 9 }} />
+                  </span>
+                  Up to 10 properties
+                </li>
+                <li className="d-flex align-items-center mb10">
+                  <span
+                    className="me-2 flex-shrink-0"
+                    style={{
+                      width: 18,
+                      height: 18,
+                      backgroundColor: "#e8f5e9",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <i className="fas fa-check" style={{ color: "#4caf50", fontSize: 9 }} />
+                  </span>
+                  3 checklist templates
+                </li>
+                <li className="d-flex align-items-center">
+                  <span
+                    className="me-2 flex-shrink-0"
+                    style={{
+                      width: 18,
+                      height: 18,
+                      backgroundColor: "#e8f5e9",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <i className="fas fa-check" style={{ color: "#4caf50", fontSize: 9 }} />
+                  </span>
+                  10 reports/month
+                </li>
+              </ul>
+            </div>
+
+            <Link href="/dashboard/subscription" className="ud-btn btn-white2 w-100" prefetch={true}>
+              View All Plans
+              <i className="fal fa-arrow-right-long ms-2" />
+            </Link>
+          </div>
         </div>
       </div>
     </>

@@ -63,6 +63,11 @@ const DashboardHeader = () => {
           text: "My Profile",
           href: "/dashboard/profile",
         },
+        {
+          icon: "fas fa-crown",
+          text: "Subscription Plans",
+          href: "/dashboard/subscription",
+        },
       ],
     },
   ];

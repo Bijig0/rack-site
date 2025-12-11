@@ -315,7 +315,104 @@ export default function BrandingPage() {
             {/* Company Logo Section */}
             <div className="mb30">
               <h5 className="fz16 fw600 mb20">Company Logo</h5>
-              <div className="d-flex align-items-start gap-4">
+
+              {/* Mobile Layout */}
+              <div className="d-block d-md-none">
+                <div className="text-center mb20">
+                  {profile?.companyLogoUrl && !logoLoadError ? (
+                    <div
+                      className="position-relative mx-auto"
+                      style={{
+                        width: 120,
+                        height: 120,
+                        borderRadius: 12,
+                        overflow: "hidden",
+                        border: "1px solid #e0e0e0",
+                        backgroundColor: "#fff",
+                      }}
+                    >
+                      <Image
+                        src={profile.companyLogoUrl}
+                        alt="Company Logo"
+                        fill
+                        style={{ objectFit: "contain" }}
+                        onError={() => {
+                          console.error("Failed to load logo:", profile.companyLogoUrl);
+                          setLogoLoadError(true);
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="mx-auto"
+                      style={{
+                        width: 120,
+                        height: 120,
+                        borderRadius: 12,
+                        backgroundColor: logoLoadError ? "#fff5f5" : "#f8f9fa",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: logoLoadError ? "2px dashed #f5c6cb" : "2px dashed #dee2e6",
+                      }}
+                    >
+                      <i className={`fas ${logoLoadError ? "fa-exclamation-triangle" : "fa-image"} fz28 mb-2`} style={{ color: logoLoadError ? "#dc3545" : "#6c757d" }} />
+                      <span className="fz12" style={{ color: logoLoadError ? "#dc3545" : "#6c757d" }}>
+                        {logoLoadError ? "Load failed" : "No logo"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <p className="fz14 mb10 text-center" style={{ color: "#666" }}>
+                  Upload your company logo to display on appraisal report headers.
+                </p>
+                <p className="fz12 text-muted mb15 text-center">
+                  Square image (1:1), min 200x200px. PNG, JPG, GIF, WebP. Max 10MB.
+                </p>
+                <div className="d-flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleLogoUpload}
+                    className="d-none"
+                    id="logo-upload-mobile"
+                  />
+                  <label
+                    htmlFor="logo-upload-mobile"
+                    className="ud-btn btn-thm flex-grow-1 text-center"
+                    style={{ cursor: isUploadingLogo ? "wait" : "pointer", padding: "10px 12px", fontSize: 14 }}
+                  >
+                    {isUploadingLogo ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-upload me-2" />
+                        {profile?.companyLogoUrl ? "Change" : "Upload"}
+                      </>
+                    )}
+                  </label>
+                  {profile?.companyLogoUrl && (
+                    <button
+                      type="button"
+                      onClick={handleLogoDelete}
+                      disabled={isUploadingLogo}
+                      className="ud-btn btn-white2 flex-grow-1"
+                      style={{ padding: "10px 12px", fontSize: 14 }}
+                    >
+                      <i className="fas fa-trash me-2" />
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Desktop Layout */}
+              <div className="d-none d-md-flex align-items-start gap-4">
                 {profile?.companyLogoUrl && !logoLoadError ? (
                   <div
                     className="position-relative flex-shrink-0"
@@ -369,15 +466,14 @@ export default function BrandingPage() {
                   </p>
                   <div className="d-flex gap-2">
                     <input
-                      ref={fileInputRef}
                       type="file"
                       accept="image/jpeg,image/png,image/gif,image/webp"
                       onChange={handleLogoUpload}
                       className="d-none"
-                      id="logo-upload"
+                      id="logo-upload-desktop"
                     />
                     <label
-                      htmlFor="logo-upload"
+                      htmlFor="logo-upload-desktop"
                       className="ud-btn btn-thm"
                       style={{ cursor: isUploadingLogo ? "wait" : "pointer" }}
                     >

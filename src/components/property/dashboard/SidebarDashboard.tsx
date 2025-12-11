@@ -64,6 +64,11 @@ const SidebarDashboard = () => {
           icon: "flaticon-user",
           text: "My Profile",
         },
+        {
+          href: "/dashboard/subscription",
+          icon: "fas fa-crown",
+          text: "Subscription Plans",
+        },
       ],
     },
   ];

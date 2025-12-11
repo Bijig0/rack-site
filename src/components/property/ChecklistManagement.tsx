@@ -483,9 +483,9 @@ export default function ChecklistManagement({
 
   return (
     <>
-      <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
+      <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p20 p-md-30 mb30 overflow-hidden position-relative">
         {/* Header */}
-        <div className="d-flex align-items-center justify-content-between mb20">
+        <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb20">
           <div>
             <h4 className="title fz17 mb-1">Inspection Checklists</h4>
             <p className="text-muted fz13 mb-0">Track property inspection items</p>
@@ -493,8 +493,8 @@ export default function ChecklistManagement({
 
           {/* Progress indicator */}
           {stats.total > 0 && (
-            <div className="d-flex align-items-center gap-3">
-              <div style={{ width: 120 }}>
+            <div className="d-flex align-items-center gap-3 w-100 w-md-auto">
+              <div className="flex-grow-1 flex-md-grow-0" style={{ minWidth: 120 }}>
                 <div className="d-flex justify-content-between fz12 mb-1">
                   <span className="text-muted">Progress</span>
                   <span className="fw500">{progressPercent}%</span>
@@ -514,7 +514,7 @@ export default function ChecklistManagement({
                   />
                 </div>
               </div>
-              <div className="text-end">
+              <div className="text-end" style={{ whiteSpace: "nowrap" }}>
                 <span className="fz13">
                   <span className="fw600 text-success">{stats.completed}</span>
                   <span className="text-muted"> / {stats.total}</span>
@@ -524,8 +524,17 @@ export default function ChecklistManagement({
           )}
         </div>
 
-        {/* Group tabs */}
-        <div className="d-flex flex-wrap align-items-center gap-2 mb20 pb15 border-bottom">
+        {/* Group tabs - horizontally scrollable on mobile */}
+        <div
+          className="d-flex align-items-center gap-2 mb20 pb15 border-bottom"
+          style={{
+            overflowX: "auto",
+            overflowY: "hidden",
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
+        >
           {groups.map((group) => {
             const groupProgress = group.items.length > 0
               ? Math.round((group.items.filter((i) => i.isCompleted).length / group.items.length) * 100)
@@ -578,6 +587,8 @@ export default function ChecklistManagement({
                       borderRadius: 8,
                       padding: "6px 14px",
                       transition: "all 0.2s ease",
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
                     }}
                   >
                     {group.name}
@@ -611,6 +622,8 @@ export default function ChecklistManagement({
               border: "1.5px dashed #ccc",
               color: "#666",
               transition: "all 0.2s ease",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
             <i className="fas fa-plus me-1" style={{ fontSize: 10 }} />
@@ -621,10 +634,14 @@ export default function ChecklistManagement({
         {/* Items */}
         {activeGroup ? (
           <>
-            <div className="d-flex justify-content-between align-items-center mb15">
-              <span className="text-muted fz12">
+            <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb15">
+              <span className="text-muted fz12 d-none d-sm-inline">
                 <i className="fas fa-info-circle me-1" />
                 Double-click group to rename · Click item name to edit
+              </span>
+              <span className="text-muted fz12 d-sm-none">
+                <i className="fas fa-info-circle me-1" />
+                Tap item to edit
               </span>
               <button
                 className="btn btn-sm text-danger"
@@ -658,7 +675,7 @@ export default function ChecklistManagement({
                     return (
                       <div
                         key={item.id}
-                        className={`d-flex align-items-center gap-3 p-3 ${
+                        className={`p-3 ${
                           index !== activeGroup.items.length - 1 ? "border-bottom" : ""
                         }`}
                         style={{
@@ -671,129 +688,243 @@ export default function ChecklistManagement({
                           borderRadius: index === 0 ? "8px 8px 0 0" : index === activeGroup.items.length - 1 ? "0 0 8px 8px" : 0,
                         }}
                       >
-                        {/* Checkbox */}
-                        <div
-                          onClick={() => handleToggleItem(item.id)}
-                          style={{
-                            width: 22,
-                            height: 22,
-                            borderRadius: 6,
-                            border: item.isCompleted ? "none" : "2px solid #d1d5db",
-                            backgroundColor: item.isCompleted ? "#10b981" : "transparent",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            transition: "all 0.2s ease",
-                            flexShrink: 0,
-                          }}
-                        >
-                          {item.isCompleted && (
-                            <i className="fas fa-check text-white" style={{ fontSize: 11 }} />
-                          )}
-                        </div>
-
-                        {/* Item name (clickable to edit) */}
-                        <div
-                          className="flex-grow-1"
-                          onClick={() => handleOpenEditItemModal(item)}
-                          style={{
-                            textDecoration: item.isCompleted ? "line-through" : "none",
-                            color: item.isCompleted ? "#9ca3af" : "#374151",
-                            fontWeight: 500,
-                            fontSize: 14,
-                            cursor: "pointer",
-                          }}
-                          title="Click to edit item"
-                        >
-                          {item.name}
-                          {hasUnsavedChange && (
+                        {/* Mobile Layout */}
+                        <div className="d-block d-md-none">
+                          {/* Row 1: Checkbox + Name + Delete */}
+                          <div className="d-flex align-items-center gap-2 mb-2">
+                            <div
+                              onClick={() => handleToggleItem(item.id)}
+                              style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: 6,
+                                border: item.isCompleted ? "none" : "2px solid #d1d5db",
+                                backgroundColor: item.isCompleted ? "#10b981" : "transparent",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                transition: "all 0.2s ease",
+                                flexShrink: 0,
+                              }}
+                            >
+                              {item.isCompleted && (
+                                <i className="fas fa-check text-white" style={{ fontSize: 12 }} />
+                              )}
+                            </div>
+                            <div
+                              className="flex-grow-1"
+                              onClick={() => handleOpenEditItemModal(item)}
+                              style={{
+                                textDecoration: item.isCompleted ? "line-through" : "none",
+                                color: item.isCompleted ? "#9ca3af" : "#374151",
+                                fontWeight: 500,
+                                fontSize: 14,
+                                cursor: "pointer",
+                              }}
+                            >
+                              {item.name}
+                              {hasUnsavedChange && (
+                                <span className="ms-1" style={{ fontSize: 8, color: "#f59e0b" }}>●</span>
+                              )}
+                            </div>
+                            <button
+                              className="btn btn-sm p-1 text-muted"
+                              onClick={() => handleDeleteItem(item.id)}
+                            >
+                              <i className="fas fa-trash-alt" style={{ fontSize: 12 }} />
+                            </button>
+                          </div>
+                          {/* Row 2: Type badge + Value input */}
+                          <div className="d-flex align-items-center gap-2 ps-4">
                             <span
-                              className="ms-2"
+                              className="badge"
+                              onClick={() => handleOpenEditItemModal(item)}
                               style={{
-                                fontSize: 8,
-                                color: "#f59e0b",
-                                verticalAlign: "middle",
+                                backgroundColor: "#f3f4f6",
+                                color: "#6b7280",
+                                fontSize: 10,
+                                padding: "4px 8px",
+                                borderRadius: 4,
+                                fontWeight: 500,
+                                cursor: "pointer",
+                                flexShrink: 0,
                               }}
                             >
-                              ●
+                              {VALUE_TYPES.find((t) => t.value === item.valueType)?.label}
                             </span>
-                          )}
+                            <div className="flex-grow-1">
+                              {item.valueType === "boolean" ? (
+                                <select
+                                  className="form-select form-select-sm"
+                                  value={item.value || ""}
+                                  onChange={(e) => handleValueChange(item.id, e.target.value)}
+                                  style={{
+                                    borderRadius: 6,
+                                    fontSize: 13,
+                                    borderColor: hasUnsavedChange ? "#f59e0b" : undefined,
+                                  }}
+                                >
+                                  <option value="">—</option>
+                                  <option value="Yes">Yes</option>
+                                  <option value="No">No</option>
+                                </select>
+                              ) : item.valueType === "date" ? (
+                                <input
+                                  type="date"
+                                  className="form-control form-control-sm"
+                                  value={item.value || ""}
+                                  onChange={(e) => handleValueChange(item.id, e.target.value)}
+                                  style={{
+                                    borderRadius: 6,
+                                    fontSize: 13,
+                                    borderColor: hasUnsavedChange ? "#f59e0b" : undefined,
+                                  }}
+                                />
+                              ) : (
+                                <input
+                                  type={item.valueType === "number" ? "number" : "text"}
+                                  className="form-control form-control-sm"
+                                  placeholder={item.valueType === "number" ? "0" : "Value..."}
+                                  value={item.value || ""}
+                                  onChange={(e) => handleValueChange(item.id, e.target.value)}
+                                  style={{
+                                    borderRadius: 6,
+                                    fontSize: 13,
+                                    borderColor: hasUnsavedChange ? "#f59e0b" : undefined,
+                                  }}
+                                />
+                              )}
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Value input */}
-                        <div style={{ width: 150 }}>
-                          {item.valueType === "boolean" ? (
-                            <select
-                              className="form-select form-select-sm"
-                              value={item.value || ""}
-                              onChange={(e) => handleValueChange(item.id, e.target.value)}
-                              style={{
-                                borderRadius: 6,
-                                fontSize: 13,
-                                borderColor: hasUnsavedChange ? "#f59e0b" : undefined,
-                              }}
-                            >
-                              <option value="">—</option>
-                              <option value="Yes">Yes</option>
-                              <option value="No">No</option>
-                            </select>
-                          ) : item.valueType === "date" ? (
-                            <input
-                              type="date"
-                              className="form-control form-control-sm"
-                              value={item.value || ""}
-                              onChange={(e) => handleValueChange(item.id, e.target.value)}
-                              style={{
-                                borderRadius: 6,
-                                fontSize: 13,
-                                borderColor: hasUnsavedChange ? "#f59e0b" : undefined,
-                              }}
-                            />
-                          ) : (
-                            <input
-                              type={item.valueType === "number" ? "number" : "text"}
-                              className="form-control form-control-sm"
-                              placeholder={item.valueType === "number" ? "0" : "Value..."}
-                              value={item.value || ""}
-                              onChange={(e) => handleValueChange(item.id, e.target.value)}
-                              style={{
-                                borderRadius: 6,
-                                fontSize: 13,
-                                borderColor: hasUnsavedChange ? "#f59e0b" : undefined,
-                              }}
-                            />
-                          )}
+                        {/* Desktop Layout */}
+                        <div className="d-none d-md-flex align-items-center gap-3">
+                          {/* Checkbox */}
+                          <div
+                            onClick={() => handleToggleItem(item.id)}
+                            style={{
+                              width: 22,
+                              height: 22,
+                              borderRadius: 6,
+                              border: item.isCompleted ? "none" : "2px solid #d1d5db",
+                              backgroundColor: item.isCompleted ? "#10b981" : "transparent",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              transition: "all 0.2s ease",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {item.isCompleted && (
+                              <i className="fas fa-check text-white" style={{ fontSize: 11 }} />
+                            )}
+                          </div>
+
+                          {/* Item name (clickable to edit) */}
+                          <div
+                            className="flex-grow-1"
+                            onClick={() => handleOpenEditItemModal(item)}
+                            style={{
+                              textDecoration: item.isCompleted ? "line-through" : "none",
+                              color: item.isCompleted ? "#9ca3af" : "#374151",
+                              fontWeight: 500,
+                              fontSize: 14,
+                              cursor: "pointer",
+                            }}
+                            title="Click to edit item"
+                          >
+                            {item.name}
+                            {hasUnsavedChange && (
+                              <span
+                                className="ms-2"
+                                style={{
+                                  fontSize: 8,
+                                  color: "#f59e0b",
+                                  verticalAlign: "middle",
+                                }}
+                              >
+                                ●
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Value input */}
+                          <div style={{ width: 150 }}>
+                            {item.valueType === "boolean" ? (
+                              <select
+                                className="form-select form-select-sm"
+                                value={item.value || ""}
+                                onChange={(e) => handleValueChange(item.id, e.target.value)}
+                                style={{
+                                  borderRadius: 6,
+                                  fontSize: 13,
+                                  borderColor: hasUnsavedChange ? "#f59e0b" : undefined,
+                                }}
+                              >
+                                <option value="">—</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                              </select>
+                            ) : item.valueType === "date" ? (
+                              <input
+                                type="date"
+                                className="form-control form-control-sm"
+                                value={item.value || ""}
+                                onChange={(e) => handleValueChange(item.id, e.target.value)}
+                                style={{
+                                  borderRadius: 6,
+                                  fontSize: 13,
+                                  borderColor: hasUnsavedChange ? "#f59e0b" : undefined,
+                                }}
+                              />
+                            ) : (
+                              <input
+                                type={item.valueType === "number" ? "number" : "text"}
+                                className="form-control form-control-sm"
+                                placeholder={item.valueType === "number" ? "0" : "Value..."}
+                                value={item.value || ""}
+                                onChange={(e) => handleValueChange(item.id, e.target.value)}
+                                style={{
+                                  borderRadius: 6,
+                                  fontSize: 13,
+                                  borderColor: hasUnsavedChange ? "#f59e0b" : undefined,
+                                }}
+                              />
+                            )}
+                          </div>
+
+                          {/* Type badge (clickable to edit) */}
+                          <span
+                            className="badge"
+                            onClick={() => handleOpenEditItemModal(item)}
+                            style={{
+                              backgroundColor: "#f3f4f6",
+                              color: "#6b7280",
+                              fontSize: 10,
+                              padding: "4px 8px",
+                              borderRadius: 4,
+                              fontWeight: 500,
+                              cursor: "pointer",
+                            }}
+                            title="Click to edit item"
+                          >
+                            {VALUE_TYPES.find((t) => t.value === item.valueType)?.label}
+                          </span>
+
+                          {/* Delete button */}
+                          <button
+                            className="btn btn-sm p-1 text-muted"
+                            onClick={() => handleDeleteItem(item.id)}
+                            style={{ opacity: 0.5, transition: "opacity 0.2s" }}
+                            onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                            onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.5")}
+                          >
+                            <i className="fas fa-trash-alt" style={{ fontSize: 12 }} />
+                          </button>
                         </div>
-
-                        {/* Type badge (clickable to edit) */}
-                        <span
-                          className="badge"
-                          onClick={() => handleOpenEditItemModal(item)}
-                          style={{
-                            backgroundColor: "#f3f4f6",
-                            color: "#6b7280",
-                            fontSize: 10,
-                            padding: "4px 8px",
-                            borderRadius: 4,
-                            fontWeight: 500,
-                            cursor: "pointer",
-                          }}
-                          title="Click to edit item"
-                        >
-                          {VALUE_TYPES.find((t) => t.value === item.valueType)?.label}
-                        </span>
-
-                        {/* Delete button */}
-                        <button
-                          className="btn btn-sm p-1 text-muted"
-                          onClick={() => handleDeleteItem(item.id)}
-                          style={{ opacity: 0.5, transition: "opacity 0.2s" }}
-                          onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                          onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.5")}
-                        >
-                          <i className="fas fa-trash-alt" style={{ fontSize: 12 }} />
-                        </button>
                       </div>
                     );
                   })}
@@ -821,47 +952,89 @@ export default function ChecklistManagement({
             {/* Save Changes Bar */}
             {hasPendingChanges && (
               <div
-                className="d-flex align-items-center justify-content-between mt-3 p-3"
+                className="mt-3 p-3"
                 style={{
                   backgroundColor: "#fffbeb",
                   borderRadius: 8,
                   border: "1px solid #fcd34d",
                 }}
               >
-                <div className="d-flex align-items-center gap-2">
-                  <i className="fas fa-exclamation-circle text-warning" />
-                  <span className="fz13 fw500">
-                    You have unsaved changes ({Object.keys(pendingChanges).length} item
-                    {Object.keys(pendingChanges).length > 1 ? "s" : ""})
-                  </span>
+                {/* Mobile: stacked layout */}
+                <div className="d-flex flex-column gap-3 d-md-none">
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="fas fa-exclamation-circle text-warning" />
+                    <span className="fz13 fw500">
+                      {Object.keys(pendingChanges).length} unsaved change
+                      {Object.keys(pendingChanges).length > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <div className="d-flex gap-2">
+                    <button
+                      className="btn btn-sm btn-light flex-grow-1"
+                      onClick={handleDiscardChanges}
+                      disabled={isSaving}
+                      style={{ borderRadius: 6, padding: "8px 12px", fontSize: 13 }}
+                    >
+                      Discard
+                    </button>
+                    <button
+                      className="btn btn-sm btn-success flex-grow-1"
+                      onClick={handleSaveChanges}
+                      disabled={isSaving}
+                      style={{ borderRadius: 6, padding: "8px 12px", fontSize: 13 }}
+                    >
+                      {isSaving ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-1" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-save me-1" />
+                          Save
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div className="d-flex gap-2">
-                  <button
-                    className="btn btn-sm btn-light"
-                    onClick={handleDiscardChanges}
-                    disabled={isSaving}
-                    style={{ borderRadius: 6, padding: "5px 12px", fontSize: 12 }}
-                  >
-                    Discard
-                  </button>
-                  <button
-                    className="btn btn-sm btn-success"
-                    onClick={handleSaveChanges}
-                    disabled={isSaving}
-                    style={{ borderRadius: 6, padding: "5px 12px", fontSize: 12 }}
-                  >
-                    {isSaving ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-1" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-save me-1" />
-                        Save Changes
-                      </>
-                    )}
-                  </button>
+
+                {/* Desktop: inline layout */}
+                <div className="d-none d-md-flex align-items-center justify-content-between">
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="fas fa-exclamation-circle text-warning" />
+                    <span className="fz13 fw500">
+                      You have unsaved changes ({Object.keys(pendingChanges).length} item
+                      {Object.keys(pendingChanges).length > 1 ? "s" : ""})
+                    </span>
+                  </div>
+                  <div className="d-flex gap-2">
+                    <button
+                      className="btn btn-sm btn-light"
+                      onClick={handleDiscardChanges}
+                      disabled={isSaving}
+                      style={{ borderRadius: 6, padding: "5px 12px", fontSize: 12 }}
+                    >
+                      Discard
+                    </button>
+                    <button
+                      className="btn btn-sm btn-success"
+                      onClick={handleSaveChanges}
+                      disabled={isSaving}
+                      style={{ borderRadius: 6, padding: "5px 12px", fontSize: 12 }}
+                    >
+                      {isSaving ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-1" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-save me-1" />
+                          Save Changes
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -906,12 +1079,12 @@ export default function ChecklistManagement({
           <div
             className="modal fade show d-block"
             tabIndex={-1}
-            style={{ zIndex: 1055 }}
+            style={{ zIndex: 1055, padding: "0 12px" }}
             onClick={(e) => {
               if (e.target === e.currentTarget) handleCloseGroupModal();
             }}
           >
-            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 420 }}>
+            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 420, margin: "auto" }}>
               <div
                 className="modal-content"
                 style={{
@@ -950,7 +1123,7 @@ export default function ChecklistManagement({
                         handleCreateGroup();
                       }
                     }}
-                    style={{ borderRadius: 8, padding: "10px 14px" }}
+                    style={{ borderRadius: 8, padding: "12px 14px", fontSize: 16 }}
                   />
 
                   {groups.length > 0 && (
@@ -965,19 +1138,19 @@ export default function ChecklistManagement({
                   )}
                 </div>
 
-                <div className="modal-footer border-0 pt-0" style={{ gap: 8 }}>
+                <div className="modal-footer border-0 pt-0 flex-column flex-sm-row" style={{ gap: 8 }}>
                   <button
-                    className="btn btn-light"
+                    className="btn btn-light w-100 w-sm-auto order-2 order-sm-1"
                     onClick={handleCloseGroupModal}
-                    style={{ borderRadius: 8, padding: "8px 20px" }}
+                    style={{ borderRadius: 8, padding: "10px 20px" }}
                   >
                     Cancel
                   </button>
                   <button
-                    className="btn btn-dark"
+                    className="btn btn-dark w-100 w-sm-auto order-1 order-sm-2"
                     onClick={handleCreateGroup}
                     disabled={!newGroupName.trim()}
-                    style={{ borderRadius: 8, padding: "8px 20px" }}
+                    style={{ borderRadius: 8, padding: "10px 20px" }}
                   >
                     Create Group
                   </button>
@@ -999,12 +1172,12 @@ export default function ChecklistManagement({
           <div
             className="modal fade show d-block"
             tabIndex={-1}
-            style={{ zIndex: 1055 }}
+            style={{ zIndex: 1055, padding: "0 12px" }}
             onClick={(e) => {
               if (e.target === e.currentTarget) handleCloseItemModal();
             }}
           >
-            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 420 }}>
+            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 420, margin: "auto" }}>
               <div
                 className="modal-content"
                 style={{
@@ -1045,13 +1218,13 @@ export default function ChecklistManagement({
                           handleCreateItem();
                         }
                       }}
-                      style={{ borderRadius: 8, padding: "10px 14px" }}
+                      style={{ borderRadius: 8, padding: "12px 14px", fontSize: 16 }}
                     />
                   </div>
 
                   <div>
                     <label className="form-label fw500 fz13">Value Type</label>
-                    <div className="d-flex gap-2 flex-wrap">
+                    <div className="d-grid gap-2" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
                       {VALUE_TYPES.map((type) => (
                         <button
                           key={type.value}
@@ -1060,9 +1233,9 @@ export default function ChecklistManagement({
                             newItemValueType === type.value ? "btn-dark" : "btn-outline-secondary"
                           }`}
                           onClick={() => setNewItemValueType(type.value as ValueType)}
-                          style={{ borderRadius: 6, padding: "6px 12px", fontSize: 12 }}
+                          style={{ borderRadius: 6, padding: "10px 12px", fontSize: 13 }}
                         >
-                          <i className={`fas ${type.icon} me-1`} style={{ fontSize: 10 }} />
+                          <i className={`fas ${type.icon} me-2`} style={{ fontSize: 12 }} />
                           {type.label}
                         </button>
                       ))}
@@ -1070,19 +1243,19 @@ export default function ChecklistManagement({
                   </div>
                 </div>
 
-                <div className="modal-footer border-0 pt-0" style={{ gap: 8 }}>
+                <div className="modal-footer border-0 pt-0 flex-column flex-sm-row" style={{ gap: 8 }}>
                   <button
-                    className="btn btn-light"
+                    className="btn btn-light w-100 w-sm-auto order-2 order-sm-1"
                     onClick={handleCloseItemModal}
-                    style={{ borderRadius: 8, padding: "8px 20px" }}
+                    style={{ borderRadius: 8, padding: "10px 20px" }}
                   >
                     Cancel
                   </button>
                   <button
-                    className="btn btn-dark"
+                    className="btn btn-dark w-100 w-sm-auto order-1 order-sm-2"
                     onClick={handleCreateItem}
                     disabled={!newItemName.trim()}
-                    style={{ borderRadius: 8, padding: "8px 20px" }}
+                    style={{ borderRadius: 8, padding: "10px 20px" }}
                   >
                     Add Item
                   </button>
@@ -1104,12 +1277,12 @@ export default function ChecklistManagement({
           <div
             className="modal fade show d-block"
             tabIndex={-1}
-            style={{ zIndex: 1055 }}
+            style={{ zIndex: 1055, padding: "0 12px" }}
             onClick={(e) => {
               if (e.target === e.currentTarget) handleCloseEditItemModal();
             }}
           >
-            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 420 }}>
+            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 420, margin: "auto" }}>
               <div
                 className="modal-content"
                 style={{
@@ -1146,13 +1319,13 @@ export default function ChecklistManagement({
                           handleUpdateItemDetails();
                         }
                       }}
-                      style={{ borderRadius: 8, padding: "10px 14px" }}
+                      style={{ borderRadius: 8, padding: "12px 14px", fontSize: 16 }}
                     />
                   </div>
 
                   <div>
                     <label className="form-label fw500 fz13">Value Type</label>
-                    <div className="d-flex gap-2 flex-wrap">
+                    <div className="d-grid gap-2" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
                       {VALUE_TYPES.map((type) => (
                         <button
                           key={type.value}
@@ -1161,9 +1334,9 @@ export default function ChecklistManagement({
                             editItemValueType === type.value ? "btn-dark" : "btn-outline-secondary"
                           }`}
                           onClick={() => setEditItemValueType(type.value as ValueType)}
-                          style={{ borderRadius: 6, padding: "6px 12px", fontSize: 12 }}
+                          style={{ borderRadius: 6, padding: "10px 12px", fontSize: 13 }}
                         >
-                          <i className={`fas ${type.icon} me-1`} style={{ fontSize: 10 }} />
+                          <i className={`fas ${type.icon} me-2`} style={{ fontSize: 12 }} />
                           {type.label}
                         </button>
                       ))}
@@ -1177,19 +1350,19 @@ export default function ChecklistManagement({
                   </div>
                 </div>
 
-                <div className="modal-footer border-0 pt-0" style={{ gap: 8 }}>
+                <div className="modal-footer border-0 pt-0 flex-column flex-sm-row" style={{ gap: 8 }}>
                   <button
-                    className="btn btn-light"
+                    className="btn btn-light w-100 w-sm-auto order-2 order-sm-1"
                     onClick={handleCloseEditItemModal}
-                    style={{ borderRadius: 8, padding: "8px 20px" }}
+                    style={{ borderRadius: 8, padding: "10px 20px" }}
                   >
                     Cancel
                   </button>
                   <button
-                    className="btn btn-dark"
+                    className="btn btn-dark w-100 w-sm-auto order-1 order-sm-2"
                     onClick={handleUpdateItemDetails}
                     disabled={!editItemName.trim()}
-                    style={{ borderRadius: 8, padding: "8px 20px" }}
+                    style={{ borderRadius: 8, padding: "10px 20px" }}
                   >
                     Save Changes
                   </button>

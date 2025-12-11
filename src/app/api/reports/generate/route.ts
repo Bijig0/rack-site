@@ -16,14 +16,18 @@ export async function POST(request: NextRequest) {
     // 1. Authenticate the user
     const session = await getSession();
     if (!session) {
+      console.log('[/api/reports/generate] No session found');
       return NextResponse.json(
         { status: 'fail', message: 'Unauthorized. Please log in.' },
         { status: 401 }
       );
     }
 
+    console.log('[/api/reports/generate] Session found for user:', session.userId);
+
     // 2. Parse request body
     const body = await request.json();
+    console.log('[/api/reports/generate] Request body:', { ...body, propertyId: body.propertyId });
 
     // 3. Forward to dedicated server with user context
     const response = await proxyToServer('/api/reports/generatePdf', {
@@ -35,9 +39,12 @@ export async function POST(request: NextRequest) {
       timeout: 30000,
     });
 
+    console.log('[/api/reports/generate] Proxy response status:', response.status);
+
     // 4. Return the response (jobId, statusUrl)
     return handleProxyResponse(response);
   } catch (error) {
+    console.error('[/api/reports/generate] Error:', error);
     return createProxyErrorResponse(error, 'POST /api/reports/generate');
   }
 }

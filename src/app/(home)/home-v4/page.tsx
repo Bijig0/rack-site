@@ -168,17 +168,18 @@ const testimonials = [
 const pricingPlans = [
   {
     type: "STARTER PLAN",
-    price: "$29",
-    currency: "AUD",
+    price: "$0",
+    currency: "",
     period: "/month",
-    description: "Ideal For: New buyer agents or low-volume users",
+    description: "Free during launch! Perfect for getting started.",
     features: [
       "Create and manage up to 10 properties",
       "Access to 3 checklist templates",
       "Generate up to 10 rental appraisal reports/month",
     ],
-    buttonLabel: "Get Started",
+    buttonLabel: "Get Started Free",
     isPopular: false,
+    isFreeLaunch: true,
   },
   {
     type: "PROFESSIONAL PLAN",
@@ -192,7 +193,7 @@ const pricingPlans = [
       "Generate up to 50 rental appraisal reports/month",
       "Email support",
     ],
-    buttonLabel: "Get Started",
+    buttonLabel: "Contact Us",
     isPopular: true,
   },
   {
@@ -208,7 +209,7 @@ const pricingPlans = [
       "Priority email support",
       "Early access to new features",
     ],
-    buttonLabel: "Get Started",
+    buttonLabel: "Contact Us",
     isPopular: false,
   },
 ];
@@ -656,6 +657,23 @@ const Home_V4 = () => {
                       : "1px solid #eee",
                   }}
                 >
+                  {(plan as any).isFreeLaunch && (
+                    <div
+                      className="mb15"
+                      style={{
+                        backgroundColor: "#4caf50",
+                        color: "white",
+                        padding: "4px 12px",
+                        borderRadius: 4,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        display: "inline-block",
+                        width: "fit-content",
+                      }}
+                    >
+                      FREE DURING LAUNCH
+                    </div>
+                  )}
                   <div className="mb30">
                     <h6 className="mb15" style={{ fontWeight: 600 }}>
                       {plan.type}
@@ -716,8 +734,8 @@ const Home_V4 = () => {
                     </ul>
                   </div>
                   <Link
-                    href="/register"
-                    className={`ud-btn w-100 ${plan.isPopular ? "btn-thm" : "btn-white2"}`}
+                    href={(plan as any).isFreeLaunch ? "/register" : "/contact"}
+                    className={`ud-btn w-100 ${(plan as any).isFreeLaunch ? "btn-thm" : plan.isPopular ? "btn-thm" : "btn-white2"}`}
                   >
                     {plan.buttonLabel}
                     <i className="fal fa-arrow-right-long" />

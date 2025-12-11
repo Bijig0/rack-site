@@ -383,23 +383,25 @@ export default function GenerateReportPage({
             )}
 
             {!userProfile?.companyName && !userProfile?.companyLogoUrl && (
-              <div className="mb30 p-3 border rounded" style={{ backgroundColor: "#fff8e6", borderColor: "#ffc107" }}>
-                <div className="d-flex align-items-start gap-2">
-                  <i className="fas fa-lightbulb text-warning mt-1"></i>
-                  <div>
-                    <p className="mb-1 fz14 fw500">Add your company branding</p>
-                    <p className="mb-2 fz13 text-muted">
-                      Personalize your reports with your company logo and name.
-                    </p>
-                    <Link
-                      href="/dashboard/profile"
-                      className="btn btn-sm btn-outline-warning"
-                    >
-                      <i className="fas fa-cog me-1"></i>
-                      Set up branding
-                    </Link>
-                  </div>
+              <div
+                className="mb30 p-3 border rounded"
+                style={{ backgroundColor: "#fff8e6", borderColor: "#ffc107" }}
+              >
+                <div className="d-flex align-items-center gap-2 mb-2">
+                  <i className="fas fa-lightbulb text-warning"></i>
+                  <p className="mb-0 fz14 fw500">Add your company branding</p>
                 </div>
+                <p className="mb-3 fz13 text-muted">
+                  Personalize your reports with your company logo and name.
+                </p>
+                <Link
+                  href="/dashboard/profile"
+                  className="ud-btn btn-warning bdrs4 d-block d-sm-inline-block"
+                  style={{ fontSize: "14px", padding: "8px 16px" }}
+                >
+                  <i className="fas fa-cog me-2"></i>
+                  Set up branding
+                </Link>
               </div>
             )}
 

@@ -1838,6 +1838,11 @@
   resolved "https://registry.npmjs.org/@drizzle-team/brocli/-/brocli-0.10.2.tgz"
   integrity sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==
 
+"@emailjs/browser@^4.4.1":
+  version "4.4.1"
+  resolved "https://registry.npmjs.org/@emailjs/browser/-/browser-4.4.1.tgz"
+  integrity sha512-DGSlP9sPvyFba3to2A50kDtZ+pXVp/0rhmqs2LmbMS3I5J8FSOgLwzY2Xb4qfKlOVHh29EAutLYwe5yuEZmEFg==
+
 "@emotion/babel-plugin@^11.13.5":
   version "11.13.5"
   resolved "https://registry.npmjs.org/@emotion/babel-plugin/-/babel-plugin-11.13.5.tgz"
@@ -4875,7 +4880,7 @@
   resolved "https://registry.npmjs.org/@types/geojson/-/geojson-7946.0.16.tgz"
   integrity sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg==
 
-"@types/google.maps@3.58.1":
+"@types/google.maps@^3.58.1", "@types/google.maps@3.58.1":
   version "3.58.1"
   resolved "https://registry.npmjs.org/@types/google.maps/-/google.maps-3.58.1.tgz"
   integrity sha512-X9QTSvGJ0nCfMzYOnaVs/k6/4L+7F5uCS+4iUmkLEls6J9S/Phv+m/i3mDeyc49ZBgwab3EFO1HEoBY7k98EGQ==

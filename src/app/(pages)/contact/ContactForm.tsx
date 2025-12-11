@@ -1,7 +1,8 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import emailjs from "@emailjs/browser";
 
 type FormData = {
   firstName: string;
@@ -12,9 +13,15 @@ type FormData = {
   message: string;
 };
 
+// EmailJS configuration - set these in your .env.local file
+const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "";
+const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "";
+const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || "";
+
 export default function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
@@ -23,17 +30,50 @@ export default function ContactForm() {
     formState: { errors },
   } = useForm<FormData>();
 
+  useEffect(() => {
+    // Initialize EmailJS
+    if (EMAILJS_PUBLIC_KEY) {
+      emailjs.init(EMAILJS_PUBLIC_KEY);
+    }
+  }, []);
+
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
+    setSubmitError(null);
+
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Form submitted:", data);
+      // Check if EmailJS is configured
+      if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+        console.warn("EmailJS not configured, logging form data instead");
+        console.log("Form submitted:", data);
+        setSubmitSuccess(true);
+        reset();
+        setTimeout(() => setSubmitSuccess(false), 5000);
+        return;
+      }
+
+      // Send email using EmailJS
+      const templateParams = {
+        from_name: `${data.firstName} ${data.lastName}`,
+        from_email: data.email,
+        phone: data.phone || "Not provided",
+        subject: data.subject,
+        message: data.message,
+        to_name: "Rack Team",
+      };
+
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        templateParams
+      );
+
       setSubmitSuccess(true);
       reset();
       setTimeout(() => setSubmitSuccess(false), 5000);
     } catch (error) {
       console.error("Error submitting form:", error);
+      setSubmitError("Failed to send message. Please try again or email us directly.");
     } finally {
       setIsSubmitting(false);
     }
@@ -205,6 +245,21 @@ export default function ContactForm() {
             >
               <i className="fas fa-check-circle me-2" />
               Thank you! Your message has been sent successfully. We&apos;ll get back to you soon.
+            </div>
+          )}
+
+          {submitError && (
+            <div
+              className="alert mb20 d-flex align-items-center"
+              style={{
+                backgroundColor: "#ffebee",
+                color: "#c62828",
+                borderRadius: 8,
+                padding: "12px 16px",
+              }}
+            >
+              <i className="fas fa-exclamation-circle me-2" />
+              {submitError}
             </div>
           )}
 
