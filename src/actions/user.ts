@@ -7,6 +7,7 @@ import { hash, compare } from 'bcryptjs';
 import { revalidateTag, unstable_cache } from 'next/cache';
 import { cache } from 'react';
 import { getSession } from '@/lib/auth';
+import { getPresignedReadUrl, isStorageConfigured } from '@/lib/storage';
 
 export type UserProfile = {
   id: string;
@@ -30,6 +31,41 @@ async function getAuthenticatedUserId(): Promise<string> {
 }
 
 /**
+ * Helper to convert stored key/URL to presigned URL
+ */
+async function getLogoPresignedUrl(stored: string | null): Promise<string | null> {
+  if (!stored || !isStorageConfigured()) {
+    return stored;
+  }
+
+  // Extract key from stored value (could be a key or legacy URL)
+  let key = stored;
+  if (stored.startsWith('http')) {
+    // Handle legacy URLs - extract key
+    const railwayMatch = stored.match(/\.storage\.railway\.app\/(.+?)(?:\?|$)/);
+    if (railwayMatch) {
+      key = railwayMatch[1];
+    } else {
+      const pathMatch = stored.match(/storage\.railway\.app\/[^/]+\/(.+?)(?:\?|$)/);
+      if (pathMatch) {
+        key = pathMatch[1];
+      } else {
+        // Can't extract key, return as-is
+        return stored;
+      }
+    }
+  }
+
+  try {
+    // Generate presigned URL (7 days expiry)
+    return await getPresignedReadUrl(key, 604800);
+  } catch (error) {
+    console.error('[getLogoPresignedUrl] Failed to generate presigned URL:', error);
+    return null;
+  }
+}
+
+/**
  * Fetch user profile from database
  */
 async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
@@ -47,7 +83,15 @@ async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
     .where(eq(user.id, userId))
     .limit(1);
 
-  return users[0] || null;
+  if (!users[0]) return null;
+
+  // Generate presigned URL for company logo if it exists
+  const profile = users[0];
+  if (profile.companyLogoUrl) {
+    profile.companyLogoUrl = await getLogoPresignedUrl(profile.companyLogoUrl);
+  }
+
+  return profile;
 }
 
 /**

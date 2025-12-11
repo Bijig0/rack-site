@@ -14,18 +14,49 @@ export default function CompanyBrandingBanner({ profile }: CompanyBrandingBanner
     return (
       <div className="mb30">
         <div
-          className="d-flex align-items-center gap-3 p20 bgc-white bdrs12"
-          style={{ border: "1px solid #e8f5e9" }}
+          className="d-flex align-items-center gap-3 p20 bdrs12 position-relative overflow-hidden"
+          style={{
+            background: "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)",
+            border: "1px solid #a5d6a7",
+            boxShadow: "0 2px 10px rgba(76, 175, 80, 0.12)",
+          }}
         >
+          {/* Decorative dots */}
+          <div
+            className="position-absolute"
+            style={{
+              top: 8,
+              right: 120,
+              width: 5,
+              height: 5,
+              backgroundColor: "#66bb6a",
+              borderRadius: "50%",
+              opacity: 0.5,
+            }}
+          />
+          <div
+            className="position-absolute"
+            style={{
+              bottom: 10,
+              right: 150,
+              width: 4,
+              height: 4,
+              backgroundColor: "#81c784",
+              borderRadius: "50%",
+              opacity: 0.4,
+            }}
+          />
+
           <div
             className="position-relative flex-shrink-0"
             style={{
               width: 48,
               height: 48,
-              borderRadius: 8,
+              borderRadius: 10,
               overflow: "hidden",
-              border: "1px solid #e0e0e0",
+              border: "2px solid #a5d6a7",
               backgroundColor: "#fff",
+              boxShadow: "0 2px 6px rgba(76, 175, 80, 0.2)",
             }}
           >
             <Image
@@ -36,19 +67,43 @@ export default function CompanyBrandingBanner({ profile }: CompanyBrandingBanner
             />
           </div>
           <div className="flex-grow-1">
-            <p className="mb-0 fw500 fz14">{profile.companyName}</p>
-            <p className="mb-0 fz12 text-muted">
-              <i className="fas fa-check-circle text-success me-1" />
+            <div className="d-flex align-items-center gap-2 mb-1">
+              <p className="mb-0 fw600 fz14" style={{ color: "#2e7d32" }}>
+                {profile.companyName}
+              </p>
+              <span
+                style={{
+                  backgroundColor: "#43a047",
+                  color: "#fff",
+                  fontSize: 9,
+                  fontWeight: 600,
+                  padding: "2px 6px",
+                  borderRadius: 8,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                Active
+              </span>
+            </div>
+            <p className="mb-0 fz12" style={{ color: "#388e3c" }}>
+              <i className="fas fa-check-circle me-1" style={{ color: "#43a047" }} />
               Your branding will appear on all generated reports
             </p>
           </div>
           <Link
             href="/dashboard/branding"
-            className="ud-btn btn-white2 btn-sm flex-shrink-0"
-            style={{ padding: "8px 16px", fontSize: 13 }}
+            className="ud-btn btn-sm flex-shrink-0 d-flex align-items-center gap-1"
+            style={{
+              padding: "8px 16px",
+              fontSize: 13,
+              backgroundColor: "rgba(255,255,255,0.8)",
+              color: "#388e3c",
+              border: "1px solid #a5d6a7",
+            }}
             prefetch={true}
           >
-            <i className="fas fa-edit me-2" />
+            <i className="fas fa-pen" style={{ fontSize: 10 }} />
             Edit
           </Link>
         </div>

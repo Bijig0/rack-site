@@ -24,6 +24,7 @@ export default function BrandingPage() {
 
   // Feedback states
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [logoLoadError, setLogoLoadError] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
@@ -72,6 +73,7 @@ export default function BrandingPage() {
 
       if (response.ok) {
         setMessage({ type: "success", text: "Logo uploaded successfully" });
+        setLogoLoadError(false); // Reset error state for new logo
         setProfile((prev) => prev ? { ...prev, companyLogoUrl: data.payload.url } : null);
       } else {
         setMessage({ type: "error", text: data.message || "Failed to upload logo" });
@@ -170,30 +172,102 @@ export default function BrandingPage() {
           {/* Status Banner */}
           {isBrandingComplete ? (
             <div
-              className="d-flex align-items-center gap-3 p20 mb30 bdrs12"
-              style={{ backgroundColor: "#e8f5e9", border: "1px solid #c8e6c9" }}
+              className="d-flex align-items-center gap-3 p20 mb30 bdrs12 position-relative overflow-hidden"
+              style={{
+                background: "linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)",
+                border: "1px solid #a5d6a7",
+                boxShadow: "0 4px 15px rgba(76, 175, 80, 0.15)",
+              }}
             >
+              {/* Decorative sparkle elements */}
+              <div
+                className="position-absolute"
+                style={{
+                  top: 8,
+                  right: 60,
+                  width: 8,
+                  height: 8,
+                  backgroundColor: "#66bb6a",
+                  borderRadius: "50%",
+                  opacity: 0.6,
+                }}
+              />
+              <div
+                className="position-absolute"
+                style={{
+                  top: 20,
+                  right: 30,
+                  width: 5,
+                  height: 5,
+                  backgroundColor: "#81c784",
+                  borderRadius: "50%",
+                  opacity: 0.5,
+                }}
+              />
+              <div
+                className="position-absolute"
+                style={{
+                  bottom: 12,
+                  right: 80,
+                  width: 6,
+                  height: 6,
+                  backgroundColor: "#4caf50",
+                  borderRadius: "50%",
+                  opacity: 0.4,
+                }}
+              />
               <div
                 style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 12,
-                  backgroundColor: "#4caf50",
+                  width: 52,
+                  height: 52,
+                  borderRadius: 14,
+                  background: "linear-gradient(135deg, #66bb6a 0%, #43a047 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  boxShadow: "0 4px 12px rgba(76, 175, 80, 0.3)",
+                }}
+              >
+                <i className="fas fa-check-circle" style={{ color: "#fff", fontSize: 24 }} />
+              </div>
+              <div className="flex-grow-1">
+                <div className="d-flex align-items-center gap-2 mb-1">
+                  <p className="mb-0 fw600 fz16" style={{ color: "#2e7d32" }}>
+                    Branding Complete
+                  </p>
+                  <span
+                    style={{
+                      backgroundColor: "#43a047",
+                      color: "#fff",
+                      fontSize: 10,
+                      fontWeight: 600,
+                      padding: "2px 8px",
+                      borderRadius: 10,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    Active
+                  </span>
+                </div>
+                <p className="mb-0 fz13" style={{ color: "#388e3c" }}>
+                  Your company logo and name will appear on all generated appraisal reports.
+                </p>
+              </div>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  backgroundColor: "rgba(255,255,255,0.7)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
                 }}
               >
-                <i className="fas fa-check" style={{ color: "#fff", fontSize: 20 }} />
-              </div>
-              <div>
-                <p className="mb-0 fw600 fz15" style={{ color: "#2e7d32" }}>
-                  Branding Complete
-                </p>
-                <p className="mb-0 fz13" style={{ color: "#558b2f" }}>
-                  Your company logo and name will appear on all generated appraisal reports.
-                </p>
+                <i className="fas fa-sparkles" style={{ color: "#43a047", fontSize: 16 }} />
               </div>
             </div>
           ) : (
@@ -242,7 +316,7 @@ export default function BrandingPage() {
             <div className="mb30">
               <h5 className="fz16 fw600 mb20">Company Logo</h5>
               <div className="d-flex align-items-start gap-4">
-                {profile?.companyLogoUrl ? (
+                {profile?.companyLogoUrl && !logoLoadError ? (
                   <div
                     className="position-relative flex-shrink-0"
                     style={{
@@ -259,6 +333,10 @@ export default function BrandingPage() {
                       alt="Company Logo"
                       fill
                       style={{ objectFit: "contain" }}
+                      onError={() => {
+                        console.error("Failed to load logo:", profile.companyLogoUrl);
+                        setLogoLoadError(true);
+                      }}
                     />
                   </div>
                 ) : (
@@ -268,16 +346,18 @@ export default function BrandingPage() {
                       width: 140,
                       height: 140,
                       borderRadius: 12,
-                      backgroundColor: "#f8f9fa",
+                      backgroundColor: logoLoadError ? "#fff5f5" : "#f8f9fa",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "center",
-                      border: "2px dashed #dee2e6",
+                      border: logoLoadError ? "2px dashed #f5c6cb" : "2px dashed #dee2e6",
                     }}
                   >
-                    <i className="fas fa-image fz32 text-muted mb-2" />
-                    <span className="fz12 text-muted">No logo</span>
+                    <i className={`fas ${logoLoadError ? "fa-exclamation-triangle" : "fa-image"} fz32 mb-2`} style={{ color: logoLoadError ? "#dc3545" : "#6c757d" }} />
+                    <span className="fz12" style={{ color: logoLoadError ? "#dc3545" : "#6c757d" }}>
+                      {logoLoadError ? "Load failed" : "No logo"}
+                    </span>
                   </div>
                 )}
                 <div className="flex-grow-1">

@@ -2,6 +2,7 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
@@ -58,17 +59,42 @@ export function generateFileKey(
   return `${folder}/${timestamp}-${sanitizedName}-${randomSuffix}.${extension}`;
 }
 
-// Get the public URL for a file
+// Get a presigned URL for reading a file (Railway buckets are private)
+export async function getPresignedReadUrl(key: string, expiresIn: number = 604800): Promise<string> {
+  const client = getS3Client();
+
+  const command = new GetObjectCommand({
+    Bucket: config.bucket,
+    Key: key,
+  });
+
+  // Generate presigned URL (default 7 days, max 90 days for Railway)
+  return getSignedUrl(client, command, { expiresIn });
+}
+
+// Get the public URL for a file (deprecated for Railway - use getPresignedReadUrl instead)
 export function getPublicUrl(key: string): string {
   if (config.publicUrl) {
     // Use CDN or custom public URL
     return `${config.publicUrl}/${key}`;
   }
   // Fallback to direct endpoint URL
+  // For Railway Object Storage, the public URL format is: https://{bucket}.{endpoint-host}/{key}
+  // e.g., https://pdfs-urro8dpjdf-cxa59g-ro.storage.railway.app/file.pdf
+  try {
+    const endpointUrl = new URL(config.endpoint);
+    // Check if this looks like Railway storage
+    if (endpointUrl.hostname === 'storage.railway.app') {
+      return `https://${config.bucket}.storage.railway.app/${key}`;
+    }
+  } catch {
+    // If URL parsing fails, fall through to default
+  }
   return `${config.endpoint}/${config.bucket}/${key}`;
 }
 
 // Upload a file to storage
+// Returns the key (not a URL) - use getPresignedReadUrl to get a readable URL
 export async function uploadFile(
   file: Buffer,
   key: string,
@@ -76,18 +102,22 @@ export async function uploadFile(
 ): Promise<{ url: string; key: string }> {
   const client = getS3Client();
 
+  // Upload without ACL (Railway doesn't support public buckets)
   const command = new PutObjectCommand({
     Bucket: config.bucket,
     Key: key,
     Body: file,
     ContentType: contentType,
-    ACL: 'public-read', // Make uploaded files publicly accessible
   });
 
   await client.send(command);
 
+  // Generate a presigned URL for immediate access (7 days)
+  const url = await getPresignedReadUrl(key);
+  console.log('[storage] File uploaded:', { key });
+
   return {
-    url: getPublicUrl(key),
+    url,
     key,
   };
 }
@@ -135,7 +165,13 @@ export function extractKeyFromUrl(url: string): string | null {
       return url.substring(config.publicUrl.length + 1);
     }
 
-    // Try endpoint format
+    // Try Railway format: https://{bucket}.storage.railway.app/{key}
+    const railwayPrefix = `https://${config.bucket}.storage.railway.app/`;
+    if (url.startsWith(railwayPrefix)) {
+      return url.substring(railwayPrefix.length);
+    }
+
+    // Try endpoint format (legacy): https://storage.railway.app/{bucket}/{key}
     const endpointPrefix = `${config.endpoint}/${config.bucket}/`;
     if (url.startsWith(endpointPrefix)) {
       return url.substring(endpointPrefix.length);

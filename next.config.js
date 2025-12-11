@@ -38,6 +38,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "storage.railway.app",
       },
+      {
+        protocol: "https",
+        hostname: "*.storage.railway.app",
+      },
     ],
   },
 };

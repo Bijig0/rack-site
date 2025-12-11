@@ -7,11 +7,41 @@ import {
   uploadFile,
   deleteFile,
   generateFileKey,
-  extractKeyFromUrl,
   isValidImageType,
   getMaxFileSize,
   isStorageConfigured,
 } from '@/lib/storage';
+
+// Helper to extract key from stored value (could be a key or legacy URL)
+function getKeyFromStored(stored: string): string {
+  // If it's already a key (doesn't start with http), return as-is
+  if (!stored.startsWith('http')) {
+    return stored;
+  }
+
+  // Handle legacy URLs - extract key from various URL formats
+  // Format: https://{bucket}.storage.railway.app/{key}
+  const railwayMatch = stored.match(/\.storage\.railway\.app\/(.+)$/);
+  if (railwayMatch) {
+    return railwayMatch[1];
+  }
+
+  // Format: https://storage.railway.app/{bucket}/{key}
+  const pathMatch = stored.match(/storage\.railway\.app\/[^/]+\/(.+)$/);
+  if (pathMatch) {
+    return pathMatch[1];
+  }
+
+  // Format with query params (presigned URL) - extract key before ?
+  const urlWithParams = stored.split('?')[0];
+  const keyMatch = urlWithParams.match(/\/([^/]+\/[^/]+\.[^/]+)$/);
+  if (keyMatch) {
+    return keyMatch[1];
+  }
+
+  // Fallback - return as-is (might fail but better than nothing)
+  return stored;
+}
 
 // Upload company logo
 export async function POST(request: NextRequest) {
@@ -66,27 +96,36 @@ export async function POST(request: NextRequest) {
 
     // Delete old logo if exists
     if (currentUser?.companyLogoUrl) {
-      const oldKey = extractKeyFromUrl(currentUser.companyLogoUrl);
-      if (oldKey) {
-        try {
-          await deleteFile(oldKey);
-        } catch (error) {
-          console.error('Failed to delete old logo:', error);
-          // Continue even if delete fails
-        }
+      const oldKey = getKeyFromStored(currentUser.companyLogoUrl);
+      try {
+        await deleteFile(oldKey);
+        console.log('[company-logo] Deleted old logo:', oldKey);
+      } catch (error) {
+        console.error('Failed to delete old logo:', error);
+        // Continue even if delete fails
       }
     }
 
     // Upload new logo
     const buffer = Buffer.from(await file.arrayBuffer());
     const key = generateFileKey('company-logos', file.name);
+
+    console.log('[company-logo] Uploading file:', {
+      key,
+      contentType: file.type,
+      size: buffer.length,
+    });
+
     const { url } = await uploadFile(buffer, key, file.type);
 
-    // Update user record
+    console.log('[company-logo] Upload successful, key:', key);
+
+    // Store the KEY (not URL) in the database
+    // Presigned URLs will be generated on-demand when fetching profile
     await db
       .update(user)
       .set({
-        companyLogoUrl: url,
+        companyLogoUrl: key, // Store key, not URL
         updatedAt: new Date(),
       } as any)
       .where(eq(user.id, session.userId));
@@ -94,7 +133,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       status: 'success',
       message: 'Logo uploaded successfully',
-      payload: { url },
+      payload: { url, key },
     });
   } catch (error) {
     console.error('[POST /api/user/company-logo]', error);
@@ -116,21 +155,20 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Get current user's logo URL
+    // Get current user's logo key
     const [currentUser] = await db
       .select({ companyLogoUrl: user.companyLogoUrl })
       .from(user)
       .where(eq(user.id, session.userId));
 
     if (currentUser?.companyLogoUrl) {
-      const key = extractKeyFromUrl(currentUser.companyLogoUrl);
-      if (key) {
-        try {
-          await deleteFile(key);
-        } catch (error) {
-          console.error('Failed to delete logo from storage:', error);
-          // Continue even if delete fails
-        }
+      const key = getKeyFromStored(currentUser.companyLogoUrl);
+      try {
+        await deleteFile(key);
+        console.log('[company-logo] Deleted logo:', key);
+      } catch (error) {
+        console.error('Failed to delete logo from storage:', error);
+        // Continue even if delete fails
       }
     }
 
