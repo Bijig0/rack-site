@@ -198,12 +198,13 @@ export default function GenerateReportPage({
       }),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      const data = await response.json();
       throw new Error(data.error || data.message || "Failed to start report generation");
     }
 
-    const { jobId } = await response.json();
+    const { jobId } = data;
 
     if (!jobId) {
       throw new Error("No job ID returned from server");
