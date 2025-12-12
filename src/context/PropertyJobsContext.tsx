@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { ToastContainer, ToastMessage } from "@/components/common/Toast";
-import { revalidateProperties } from "@/actions/properties";
+import { revalidateProperties, type PropertyWithAppraisal } from "@/actions/properties";
 
 export interface PendingJob {
   jobId: string;
@@ -14,11 +14,29 @@ export interface PendingJob {
   progress?: number;
 }
 
+// Optimistic property data for immediate display after creation
+export interface OptimisticProperty {
+  id: string;
+  userId: string;
+  addressCommonName: string;
+  bedroomCount: null;
+  bathroomCount: null;
+  propertyType: null;
+  landAreaSqm: null;
+  mainImageUrl: null;
+  createdAt: Date;
+  updatedAt: Date;
+  latestAppraisal: null;
+}
+
 interface PropertyJobsContextType {
   pendingJobs: PendingJob[];
+  optimisticProperties: OptimisticProperty[];
   addJob: (job: Omit<PendingJob, "status">) => void;
   removeJob: (jobId: string) => void;
   showToast: (type: ToastMessage["type"], message: string) => void;
+  clearOptimisticProperty: (propertyId: string) => void;
+  mergeWithOptimistic: (serverProperties: PropertyWithAppraisal[]) => PropertyWithAppraisal[];
 }
 
 const PropertyJobsContext = createContext<PropertyJobsContextType | null>(null);
@@ -27,6 +45,7 @@ const STORAGE_KEY = "pending-property-jobs";
 
 export function PropertyJobsProvider({ children }: { children: ReactNode }) {
   const [pendingJobs, setPendingJobs] = useState<PendingJob[]>([]);
+  const [optimisticProperties, setOptimisticProperties] = useState<OptimisticProperty[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const router = useRouter();
 
@@ -119,15 +138,33 @@ export function PropertyJobsProvider({ children }: { children: ReactNode }) {
           }
 
           // BullMQ returns: waiting, active, completed, failed, delayed, paused
-          // Our API returns "success" on completed jobs after creating the property record
-          if (data.status === "success" || data.status === "completed") {
-            // Job completed successfully
+          // Our API returns "success" with propertyId on completed jobs after creating the property record
+          // Only treat as success if we have status=success AND a propertyId
+          if (data.status === "success" && data.propertyId) {
+            // Job completed successfully and property was created
             setPendingJobs((prev) =>
               prev.map((j) =>
                 j.jobId === job.jobId ? { ...j, status: "success" } : j
               )
             );
             showToast("success", `Property "${job.addressCommonName}" created successfully!`);
+
+            // Add optimistic property for immediate display
+            const now = new Date();
+            const optimisticProperty: OptimisticProperty = {
+              id: data.propertyId,
+              userId: "", // Will be filled by server data
+              addressCommonName: job.addressCommonName,
+              bedroomCount: null,
+              bathroomCount: null,
+              propertyType: null,
+              landAreaSqm: null,
+              mainImageUrl: null,
+              createdAt: now,
+              updatedAt: now,
+              latestAppraisal: null,
+            };
+            setOptimisticProperties((prev) => [optimisticProperty, ...prev]);
 
             // Revalidate the properties cache
             await revalidateProperties();
@@ -190,6 +227,31 @@ export function PropertyJobsProvider({ children }: { children: ReactNode }) {
     setPendingJobs((prev) => prev.filter((j) => j.jobId !== jobId));
   }, []);
 
+  const clearOptimisticProperty = useCallback((propertyId: string) => {
+    setOptimisticProperties((prev) => prev.filter((p) => p.id !== propertyId));
+  }, []);
+
+  // Merge server properties with optimistic properties, removing optimistic ones that exist in server data
+  const mergeWithOptimistic = useCallback((serverProperties: PropertyWithAppraisal[]): PropertyWithAppraisal[] => {
+    const serverIds = new Set(serverProperties.map((p) => p.id));
+
+    // Filter out optimistic properties that are now in server data (they've been fetched)
+    const newOptimistic = optimisticProperties.filter((op) => !serverIds.has(op.id));
+
+    // Update state if we found any to clear (do this in an effect-safe way)
+    if (newOptimistic.length !== optimisticProperties.length) {
+      // Schedule the cleanup for next tick to avoid state updates during render
+      setTimeout(() => {
+        setOptimisticProperties(newOptimistic);
+      }, 0);
+    }
+
+    // Return merged list: optimistic properties that aren't in server data + server properties
+    // Cast optimistic properties to PropertyWithAppraisal (they have the same shape)
+    const remainingOptimistic = optimisticProperties.filter((op) => !serverIds.has(op.id)) as PropertyWithAppraisal[];
+    return [...remainingOptimistic, ...serverProperties];
+  }, [optimisticProperties]);
+
   const showToast = useCallback((type: ToastMessage["type"], message: string) => {
     const id = Math.random().toString(36).slice(2, 11);
     setToasts((prev) => [...prev, { id, type, message }]);
@@ -200,7 +262,7 @@ export function PropertyJobsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <PropertyJobsContext.Provider value={{ pendingJobs, addJob, removeJob, showToast }}>
+    <PropertyJobsContext.Provider value={{ pendingJobs, optimisticProperties, addJob, removeJob, showToast, clearOptimisticProperty, mergeWithOptimistic }}>
       {children}
       <ToastContainer toasts={toasts} onClose={closeToast} />
     </PropertyJobsContext.Provider>

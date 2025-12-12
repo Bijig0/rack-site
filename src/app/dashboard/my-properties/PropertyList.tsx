@@ -333,15 +333,18 @@ interface PropertyListProps {
 
 export default function PropertyList({ properties }: PropertyListProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const { pendingJobs, removeJob } = usePropertyJobs();
+  const { pendingJobs, removeJob, mergeWithOptimistic } = usePropertyJobs();
   const { isPropertyGeneratingReport } = useReportJobs();
+
+  // Merge server properties with optimistic properties for immediate display
+  const mergedProperties = mergeWithOptimistic(properties);
 
   // Get active pending jobs (pending, processing, or error)
   const activePendingJobs = pendingJobs.filter(
     (j) => j.status === "pending" || j.status === "processing" || j.status === "error"
   );
 
-  const filteredProperties = properties.filter((property) =>
+  const filteredProperties = mergedProperties.filter((property) =>
     property.addressCommonName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
